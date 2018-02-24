@@ -1,26 +1,26 @@
-﻿using Blogifier.Core.Common;
-using Blogifier.Core.Data.Domain;
-using Blogifier.Core.Data.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Blogifier.Core.Controllers.Api
+﻿namespace Blogifier.Core.Controllers.Api
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Common;
+    using Data.Domain;
+    using Data.Interfaces;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Logging;
+
     [Authorize]
     [Route("blogifier/api/[controller]")]
     public class PackagesController : Controller
     {
-        IUnitOfWork _db;
-        ILogger _logger;
+        private readonly IUnitOfWork db;
+        private ILogger logger;
 
         public PackagesController(IUnitOfWork db, ILogger<AssetsController> logger)
         {
-            _db = db;
-            _logger = logger;
+            this.db = db;
+            this.logger = logger;
         }
 
         [HttpPut("enable/{id}")]
@@ -30,7 +30,11 @@ namespace Blogifier.Core.Controllers.Api
             if (disabled != null && disabled.Contains(id))
             {
                 disabled.Remove(id);
-                await _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.DisabledPackages, string.Join(",", disabled));
+                await this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.DisabledPackages,
+                    string.Join(",",
+                        disabled));
             }
         }
 
@@ -40,34 +44,45 @@ namespace Blogifier.Core.Controllers.Api
             var disabled = Disabled();
             if (disabled == null)
             {
-                await _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.DisabledPackages, id);
+                await this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.DisabledPackages,
+                    id);
             }
             else
             {
                 if (!disabled.Contains(id))
                 {
                     disabled.Add(id);
-                    await _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.DisabledPackages, string.Join(",", disabled));
+                    await this.db.CustomFields.SetCustomField(CustomType.Application,
+                        0,
+                        Constants.DisabledPackages,
+                        string.Join(",",
+                            disabled));
                 }
             }
         }
 
-        List<string> Disabled()
+        private List<string> Disabled()
         {
-            var field = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.DisabledPackages);
+            var field = this.db.CustomFields.GetValue(CustomType.Application,
+                0,
+                Constants.DisabledPackages);
             return string.IsNullOrEmpty(field) ? null : field.Split(',').ToList();
         }
 
-        Profile GetProfile()
+        private Profile GetProfile()
         {
             try
             {
-                return _db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
+                return this.db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
             }
             catch
             {
-                RedirectToAction("Login", "Account");
+                RedirectToAction("Login",
+                    "Account");
             }
+
             return null;
         }
     }

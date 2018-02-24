@@ -15,15 +15,15 @@ namespace Blogifier.Core.Controllers.Api
     [Route("blogifier/api/[controller]")]
     public class ToolsController : Controller
     {
-        IUnitOfWork _db;
-        IRssService _rss;
-        private readonly ILogger _logger;
+        IUnitOfWork db;
+        IRssService rss;
+        private readonly ILogger logger;
 
         public ToolsController(IUnitOfWork db, IRssService rss, ILogger<AdminController> logger)
         {
-            _db = db;
-            _rss = rss;
-            _logger = logger;
+            this.db = db;
+            this.rss = rss;
+            this.logger = logger;
         }
 
         // PUT: api/tools/rssimport
@@ -35,7 +35,7 @@ namespace Blogifier.Core.Controllers.Api
             rss.ProfileId = profile.Id;
             rss.Root = Url.Content("~/");
             
-            return await _rss.Import(rss);
+            return await this.rss.Import(rss);
         }
 
         [HttpDelete("{id}")]
@@ -47,37 +47,37 @@ namespace Blogifier.Core.Controllers.Api
             if (!profile.IsAdmin || profile.Id == id)
                 return NotFound();
 
-            _logger.LogInformation(string.Format("Delete blog {0} by {1}", id, profile.AuthorName));
+            this.logger.LogInformation(string.Format("Delete blog {0} by {1}", id, profile.AuthorName));
 
-            var assets = _db.Assets.Find(a => a.ProfileId == id);
-            _db.Assets.RemoveRange(assets);
-            _db.Complete();
-            _logger.LogInformation("Assets deleted");
+            var assets = this.db.Assets.Find(a => a.ProfileId == id);
+            this.db.Assets.RemoveRange(assets);
+            this.db.Complete();
+            this.logger.LogInformation("Assets deleted");
 
-            var categories = _db.Categories.Find(c => c.ProfileId == id);
-            _db.Categories.RemoveRange(categories);
-            _db.Complete();
-            _logger.LogInformation("Categories deleted");
+            var categories = this.db.Categories.Find(c => c.ProfileId == id);
+            this.db.Categories.RemoveRange(categories);
+            this.db.Complete();
+            this.logger.LogInformation("Categories deleted");
 
-            var posts = _db.BlogPosts.Find(p => p.ProfileId == id);
-            _db.BlogPosts.RemoveRange(posts);
-            _db.Complete();
-            _logger.LogInformation("Posts deleted");
+            var posts = this.db.BlogPosts.Find(p => p.ProfileId == id);
+            this.db.BlogPosts.RemoveRange(posts);
+            this.db.Complete();
+            this.logger.LogInformation("Posts deleted");
 
-            var fields = _db.CustomFields.Find(f => f.CustomType == CustomType.Profile && f.ParentId == id);
-            _db.CustomFields.RemoveRange(fields);
-            _db.Complete();
-            _logger.LogInformation("Custom fields deleted");
+            var fields = this.db.CustomFields.Find(f => f.CustomType == CustomType.Profile && f.ParentId == id);
+            this.db.CustomFields.RemoveRange(fields);
+            this.db.Complete();
+            this.logger.LogInformation("Custom fields deleted");
 
-            var profileToDelete = _db.Profiles.Single(b => b.Id == id);
+            var profileToDelete = this.db.Profiles.Single(b => b.Id == id);
 
             var storage = new BlogStorage(profileToDelete.Slug);
             storage.DeleteFolder("");
-            _logger.LogInformation("Storage deleted");
+            this.logger.LogInformation("Storage deleted");
 
-            _db.Profiles.Remove(profileToDelete);
-            _db.Complete();
-            _logger.LogInformation("Profile deleted");
+            this.db.Profiles.Remove(profileToDelete);
+            this.db.Complete();
+            this.logger.LogInformation("Profile deleted");
 
             return new NoContentResult();
         }
@@ -86,7 +86,7 @@ namespace Blogifier.Core.Controllers.Api
         {
             try
             {
-                return _db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
+                return this.db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
             }
             catch
             {

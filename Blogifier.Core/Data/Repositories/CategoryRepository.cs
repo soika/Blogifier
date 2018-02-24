@@ -13,18 +13,18 @@ namespace Blogifier.Core.Data.Repositories
 {
     public class CategoryRepository : Repository<Category>, ICategoryRepository
     {
-        BlogifierDbContext _db;
+        BlogifierDbContext db;
 
         public CategoryRepository(BlogifierDbContext db) : base(db)
         {
-            _db = db;
+            this.db = db;
         }
 
         public IEnumerable<Category> Find(Expression<Func<Category, bool>> predicate, Pager pager)
         {
             if(pager == null)
             {
-                return _db.Categories.AsNoTracking()
+                return this.db.Categories.AsNoTracking()
                     .Include(c => c.PostCategories)
                     .Where(predicate)
                     .OrderBy(c => c.Title);
@@ -32,7 +32,7 @@ namespace Blogifier.Core.Data.Repositories
 
             var skip = pager.CurrentPage * pager.ItemsPerPage - pager.ItemsPerPage;
 
-            var categories = _db.Categories.AsNoTracking()
+            var categories = this.db.Categories.AsNoTracking()
                 .Include(c => c.PostCategories)
                 .Where(predicate)
                 .OrderBy(c => c.Title)
@@ -46,7 +46,7 @@ namespace Blogifier.Core.Data.Repositories
         public IEnumerable<SelectListItem> PostCategories(int postId)
         {
             var items = new List<SelectListItem>();
-            var postCategories = _db.PostCategories.Include(pc => pc.Category).Where(c => c.BlogPostId == postId);
+            var postCategories = this.db.PostCategories.Include(pc => pc.Category).Where(c => c.BlogPostId == postId);
             foreach (var item in postCategories)
             {
                 var newItem = new SelectListItem { Value = item.Id.ToString(), Text = item.Category.Title };
@@ -60,13 +60,13 @@ namespace Blogifier.Core.Data.Repositories
 
         public IEnumerable<SelectListItem> CategoryList(Expression<Func<Category, bool>> predicate)
         {
-            return _db.Categories.Where(predicate).OrderBy(c => c.Title)
+            return this.db.Categories.Where(predicate).OrderBy(c => c.Title)
                 .Select(c => new SelectListItem { Text = c.Title, Value = c.Id.ToString() }).ToList();
         }
 
         public async Task<Category> SingleIncluded(Expression<Func<Category, bool>> predicate)
         {
-            return await _db.Categories.AsNoTracking()
+            return await this.db.Categories.AsNoTracking()
                 .Include(c => c.PostCategories)
                 .FirstOrDefaultAsync(predicate);
         }
@@ -75,19 +75,19 @@ namespace Blogifier.Core.Data.Repositories
         {
             try
             {
-                var existing = _db.PostCategories.Where(
+                var existing = this.db.PostCategories.Where(
                     pc => pc.BlogPostId == postId &&
                     pc.CategoryId == categoryId).SingleOrDefault();
 
                 if (existing == null)
                 {
-                    _db.PostCategories.Add(new PostCategory
+                    this.db.PostCategories.Add(new PostCategory
                     {
                         BlogPostId = postId,
                         CategoryId = categoryId,
                         LastUpdated = SystemClock.Now()
                     });
-                    _db.SaveChanges();
+                    this.db.SaveChanges();
                 }
                 return true;
             }
@@ -101,7 +101,7 @@ namespace Blogifier.Core.Data.Repositories
         {
             try
             {
-                var existing = _db.PostCategories.Where(
+                var existing = this.db.PostCategories.Where(
                     pc => pc.BlogPostId == postId &&
                     pc.CategoryId == categoryId).SingleOrDefault();
 
@@ -110,7 +110,7 @@ namespace Blogifier.Core.Data.Repositories
                     return false;
                 }
 
-                _db.PostCategories.Remove(existing);
+                this.db.PostCategories.Remove(existing);
                 return true;
             }
             catch

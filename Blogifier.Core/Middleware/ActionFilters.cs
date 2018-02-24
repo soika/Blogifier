@@ -15,7 +15,7 @@ namespace Blogifier.Core.Middleware
     /// </summary>
     public class VerifyProfile : ActionFilterAttribute
     {
-        DbContextOptions<BlogifierDbContext> _options;
+        DbContextOptions<BlogifierDbContext> options;
 
         public VerifyProfile()
         {
@@ -23,12 +23,12 @@ namespace Blogifier.Core.Middleware
 
             ApplicationSettings.DatabaseOptions(builder);
 
-            _options = builder.Options;
+            this.options = builder.Options;
         }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
-            using (var context = new BlogifierDbContext(_options))
+            using (var context = new BlogifierDbContext(this.options))
             {
                 var user = filterContext.HttpContext.User.Identity.Name;
                 if (context.Profiles.SingleOrDefaultAsync(p => p.IdentityName == user).Result == null)
@@ -41,7 +41,7 @@ namespace Blogifier.Core.Middleware
 
     public class MustBeAdmin : ActionFilterAttribute
     {
-        DbContextOptions<BlogifierDbContext> _options;
+        DbContextOptions<BlogifierDbContext> options;
 
         public MustBeAdmin()
         {
@@ -49,12 +49,12 @@ namespace Blogifier.Core.Middleware
 
             ApplicationSettings.DatabaseOptions(builder);
 
-            _options = builder.Options;
+            this.options = builder.Options;
         }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
-            using (var context = new BlogifierDbContext(_options))
+            using (var context = new BlogifierDbContext(this.options))
             {
                 var loggedUser = filterContext.HttpContext.User.Identity.Name;
                 var profile = context.Profiles.SingleOrDefaultAsync(p => p.IdentityName == loggedUser).Result;

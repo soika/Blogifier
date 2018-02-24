@@ -1,25 +1,25 @@
-﻿using Blogifier.Core.Data.Models;
-using Blogifier.Core.Services.Data;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-
-namespace Blogifier.Core.Controllers.Api.Public
+﻿namespace Blogifier.Core.Controllers.Api.Public
 {
+    using Data.Models;
+    using Microsoft.AspNetCore.Mvc;
+    using Services.Data;
+
     [Route("blogifier/api/public/[controller]")]
     public class PostsController : Controller
     {
-        IDataService _ds;
+        private readonly IDataService dataService;
 
-        public PostsController(IDataService ds)
+        public PostsController(IDataService dataService)
         {
-            _ds = ds;
+            this.dataService = dataService;
         }
 
         // GET blogifier/api/public/posts
         // GET blogifier/api/public/posts?page=2
         public BlogPostsModel Get(int page = 1)
         {
-            return _ds.GetPosts(page, true);
+            return this.dataService.GetPosts(page,
+                true);
         }
 
         // GET blogifier/api/public/posts/author/filip-stanek
@@ -27,7 +27,9 @@ namespace Blogifier.Core.Controllers.Api.Public
         [HttpGet("[action]/{slug}")]
         public BlogAuthorModel Author(string slug, int page = 1)
         {
-            return _ds.GetPostsByAuthor(slug, page, true);
+            return this.dataService.GetPostsByAuthor(slug,
+                page,
+                true);
         }
 
         // GET blogifier/api/public/posts/author/category/mobile
@@ -35,7 +37,10 @@ namespace Blogifier.Core.Controllers.Api.Public
         [HttpGet("[action]/{auth}/{cat}")]
         public BlogCategoryModel Category(string auth, string cat, int page = 1)
         {
-            return _ds.GetPostsByCategory(auth, cat, page, true);
+            return this.dataService.GetPostsByCategory(auth,
+                cat,
+                page,
+                true);
         }
 
         // GET blogifier/api/public/posts/search/dot%20net
@@ -43,14 +48,17 @@ namespace Blogifier.Core.Controllers.Api.Public
         [HttpGet("[action]/{term}")]
         public BlogPostsModel Search(string term, int page = 1)
         {
-            return _ds.SearchPosts(term, page, true);
+            return this.dataService.SearchPosts(term,
+                page,
+                true);
         }
 
         // GET blogifier/api/public/posts/post/running-local-web-pages-in-cefsharpwpf
         [HttpGet("[action]/{slug}")]
         public BlogPostDetailModel Post(string slug)
         {
-            return _ds.GetPostBySlug(slug, true);
+            return this.dataService.GetPostBySlug(slug,
+                true);
         }
     }
 }

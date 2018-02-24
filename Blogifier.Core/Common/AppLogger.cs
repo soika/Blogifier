@@ -1,37 +1,37 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Blogifier.Core.Common
+﻿namespace Blogifier.Core.Common
 {
+    using Microsoft.Extensions.Logging;
+
     public class AppLogger
     {
-        ILogger<object> _logger;
+        private readonly ILogger<object> logger;
 
         public AppLogger(ILogger<object> logger)
         {
-            _logger = logger;
+            this.logger = logger;
         }
 
         public void LogInformation(string msg)
         {
-            if(_logger != null && ApplicationSettings.EnableLogging)
+            if (this.logger != null && ApplicationSettings.EnableLogging)
             {
-                _logger.LogInformation("[BLOGIFIER] " + msg);
+                this.logger.LogInformation("[BLOGIFIER] " + msg);
             }
         }
 
         public void LogWarning(string msg)
         {
-            if (_logger != null && ApplicationSettings.EnableLogging)
+            if (this.logger != null && ApplicationSettings.EnableLogging)
             {
-                _logger.LogWarning("[BLOGIFIER] " + msg);
+                this.logger.LogWarning("[BLOGIFIER] " + msg);
             }
         }
 
         public void LogError(string msg)
         {
-            if (_logger != null && ApplicationSettings.EnableLogging)
+            if (this.logger != null && ApplicationSettings.EnableLogging)
             {
-                _logger.LogError("[BLOGIFIER] " + msg);
+                this.logger.LogError("[BLOGIFIER] " + msg);
             }
         }
     }

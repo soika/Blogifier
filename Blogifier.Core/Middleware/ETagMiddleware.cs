@@ -14,11 +14,11 @@ namespace Blogifier.Core.Middleware
     */
     public class ETagMiddleware
     {
-        private readonly RequestDelegate _next;
+        private readonly RequestDelegate next;
 
         public ETagMiddleware(RequestDelegate next)
         {
-            _next = next;
+            this.next = next;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -30,7 +30,7 @@ namespace Blogifier.Core.Middleware
             {
                 response.Body = ms;
 
-                await _next(context);
+                await this.next(context);
 
                 if (IsEtagSupported(response))
                 {

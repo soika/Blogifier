@@ -16,7 +16,7 @@ namespace Blogifier.Test.Services.Syndication
 {
     public class FeedParserTests
     {
-        DbContextOptions<BlogifierDbContext> _options;
+        DbContextOptions<BlogifierDbContext> options;
 
         public FeedParserTests()
         {
@@ -24,7 +24,7 @@ namespace Blogifier.Test.Services.Syndication
 
             ApplicationSettings.DatabaseOptions(builder);
 
-            _options = builder.Options;
+            this.options = builder.Options;
         }
 
         [Theory()]
@@ -32,7 +32,7 @@ namespace Blogifier.Test.Services.Syndication
         [InlineData(@"SeedData\Feeds\WordPressRSS.xml")]
         public void CanParseRssFeed(string feed)
         {
-            using (var context = new BlogifierDbContext(_options))
+            using (var context = new BlogifierDbContext(this.options))
             {
                 var storage = new BlogStorage("test");
                 var path = Path.Combine(GetRoot(), feed);

@@ -13,9 +13,9 @@ namespace Blogifier.Core.Services.FileSystem
 {
     public class BlogStorage : IBlogStorage
     {
-        string _blogSlug;
-        string _separator = Path.DirectorySeparatorChar.ToString();
-		string _uploadFolder = ApplicationSettings.BlogStorageFolder;
+        string blogSlug;
+        string separator = Path.DirectorySeparatorChar.ToString();
+		string uploadFolder = ApplicationSettings.BlogStorageFolder;
 
         public BlogStorage(string blogSlug)
         {
@@ -23,7 +23,7 @@ namespace Blogifier.Core.Services.FileSystem
             // and called to get themes for new profile
             if (!string.IsNullOrEmpty(blogSlug))
             {
-                _blogSlug = blogSlug;
+                this.blogSlug = blogSlug;
 
                 if (!Directory.Exists(Location))
                     CreateFolder("");
@@ -37,11 +37,11 @@ namespace Blogifier.Core.Services.FileSystem
                 var path = ApplicationSettings.WebRootPath == null ? 
                     Path.Combine(GetAppRoot(), "wwwroot") : ApplicationSettings.WebRootPath;
 
-                path = Path.Combine(path, _uploadFolder.Replace("/", Path.DirectorySeparatorChar.ToString()));
+                path = Path.Combine(path, this.uploadFolder.Replace("/", Path.DirectorySeparatorChar.ToString()));
 
-                if (!string.IsNullOrEmpty(_blogSlug))
+                if (!string.IsNullOrEmpty(this.blogSlug))
                 {
-                    path = Path.Combine(path, _blogSlug);
+                    path = Path.Combine(path, this.blogSlug);
                 }
                 return path;
             }
@@ -50,7 +50,7 @@ namespace Blogifier.Core.Services.FileSystem
         public IList<string> GetAssets(string path)
         {
             var items = new List<string>();
-            path = path.Replace("/", _separator);
+            path = path.Replace("/", this.separator);
             var dir = string.IsNullOrEmpty(path) ? Location : Path.Combine(Location, path);
             try
             {
@@ -66,14 +66,14 @@ namespace Blogifier.Core.Services.FileSystem
 
         public async Task <Asset> UploadFormFile(IFormFile file, string root, string path = "")
         {
-            path = path.Replace("/", _separator);
+            path = path.Replace("/", this.separator);
 
             VerifyPath(path);
 
             var fileName = GetFileName(file.FileName);
             var filePath = string.IsNullOrEmpty(path) ?
                 Path.Combine(Location, fileName) :
-                Path.Combine(Location, path + _separator + fileName);
+                Path.Combine(Location, path + this.separator + fileName);
 
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
@@ -90,7 +90,7 @@ namespace Blogifier.Core.Services.FileSystem
 
         public async Task<Asset> UploadBase64Image(string baseImg, string root, string path = "")
         {
-            path = path.Replace("/", _separator);
+            path = path.Replace("/", this.separator);
             var fileName = "";
 
             VerifyPath(path);
@@ -115,7 +115,7 @@ namespace Blogifier.Core.Services.FileSystem
 
             var filePath = string.IsNullOrEmpty(path) ?
                 Path.Combine(Location, fileName) :
-                Path.Combine(Location, path + _separator + fileName);
+                Path.Combine(Location, path + this.separator + fileName);
 
             byte[] bytes = Convert.FromBase64String(baseImg);
 
@@ -132,14 +132,14 @@ namespace Blogifier.Core.Services.FileSystem
 
         public async Task<Asset> UploadFromWeb(Uri requestUri, string root, string path = "")
         {
-            path = path.Replace("/", _separator);
+            path = path.Replace("/", this.separator);
 
             VerifyPath(path);
 
             var fileName = TitleFromUri(requestUri);
             var filePath = string.IsNullOrEmpty(path) ? 
                 Path.Combine(Location, fileName) : 
-                Path.Combine(Location, path + _separator + fileName);
+                Path.Combine(Location, path + this.separator + fileName);
 
             using (var client = new HttpClient())
             {
@@ -201,17 +201,17 @@ namespace Blogifier.Core.Services.FileSystem
             if (string.IsNullOrEmpty(path))
                 return Location;
             else
-                return Path.Combine(Location, path.Replace("/", _separator));
+                return Path.Combine(Location, path.Replace("/", this.separator));
         }
 
         string GetFileName(string fileName)
         {
             // some browsers pass uploaded file name as short file name 
             // and others include the path; remove path part if needed
-            if (fileName.Contains(_separator))
+            if (fileName.Contains(this.separator))
             {
-                fileName = fileName.Substring(fileName.LastIndexOf(_separator));
-                fileName = fileName.Replace(_separator, "");
+                fileName = fileName.Substring(fileName.LastIndexOf(this.separator));
+                fileName = fileName.Replace(this.separator, "");
             }
             // when drag-and-drop or copy image to TinyMce editor
             // it uses "mceclip0" as file name; randomize it for multiple uploads
@@ -225,8 +225,8 @@ namespace Blogifier.Core.Services.FileSystem
 
 		string GetUrl(string path, string root)
         {
-			var url = path.ReplaceIgnoreCase(Location, "").Replace(_separator, "/");
-			return string.Concat(root, _uploadFolder , "/", _blogSlug, url);
+			var url = path.ReplaceIgnoreCase(Location, "").Replace(this.separator, "/");
+			return string.Concat(root, this.uploadFolder , "/", this.blogSlug, url);
         }
 
         /// <summary>

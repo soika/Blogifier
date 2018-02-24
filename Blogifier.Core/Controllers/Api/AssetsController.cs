@@ -18,13 +18,13 @@ namespace Blogifier.Core.Controllers.Api
     [Route("blogifier/api/[controller]")]
     public class AssetsController : Controller
     {
-        IUnitOfWork _db;
-        ILogger _logger;
+        private readonly IUnitOfWork db;
+        private readonly ILogger logger;
 
         public AssetsController(IUnitOfWork db, ILogger<AssetsController> logger)
         {
-            _db = db;
-            _logger = logger;
+            this.db = db;
+            this.logger = logger;
         }
 
         // GET: api/assets/2?search=foo&filter=filterImages
@@ -36,19 +36,18 @@ namespace Blogifier.Core.Controllers.Api
             IEnumerable<Asset> assets;
 
             var term = search == null || search == "null" ? "" : search;
-            var fltr = filter == null || filter == "null" ? "" : filter;
 
             if (filter == "filterImages")
             {
-                assets = _db.Assets.Find(a => a.ProfileId == profile.Id && a.Title.Contains(term) && a.AssetType == AssetType.Image, pager);
+                assets = this.db.Assets.Find(a => a.ProfileId == profile.Id && a.Title.Contains(term) && a.AssetType == AssetType.Image, pager);
             }
             else if (filter == "filterAttachments")
             {
-                assets = _db.Assets.Find(a => a.ProfileId == profile.Id && a.Title.Contains(term) && a.AssetType == AssetType.Attachment, pager);
+                assets = this.db.Assets.Find(a => a.ProfileId == profile.Id && a.Title.Contains(term) && a.AssetType == AssetType.Attachment, pager);
             }
             else
             {
-                assets = _db.Assets.Find(a => a.ProfileId == profile.Id && a.Title.Contains(term), pager);
+                assets = this.db.Assets.Find(a => a.ProfileId == profile.Id && a.Title.Contains(term), pager);
             }
 
             return new AdminAssetList { Assets = assets, Pager = pager };
@@ -58,7 +57,7 @@ namespace Blogifier.Core.Controllers.Api
         [HttpGet("asset/{id:int}")]
         public async Task<Asset> GetSingle(int id)
         {
-            var model = _db.Assets.Single(a => a.Id == id);
+            var model = this.db.Assets.Single(a => a.Id == id);
             return await Task.Run(() => model);
         }
 
@@ -67,7 +66,7 @@ namespace Blogifier.Core.Controllers.Api
         [Route("{type}/{id:int}")]
         public Asset UpdateProfileImage(string type, int id)
         {
-            var asset = _db.Assets.Single(a => a.Id == id);
+            var asset = this.db.Assets.Single(a => a.Id == id);
             type = type.ToLower();
 
             if (!string.IsNullOrEmpty(type))
@@ -75,22 +74,22 @@ namespace Blogifier.Core.Controllers.Api
                 if(type == "applogo")
                 {
                     BlogSettings.Logo = asset.Url;
-                    _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileLogo, asset.Url);
+                    this.db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileLogo, asset.Url);
                 }
                 else if(type == "appavatar")
                 {
                     ApplicationSettings.ProfileAvatar = asset.Url;
-                    _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileAvatar, asset.Url);
+                    this.db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileAvatar, asset.Url);
                 }
                 else if (type == "appimage")
                 {
                     BlogSettings.Cover = asset.Url;
-                    _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileImage, asset.Url);
+                    this.db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileImage, asset.Url);
                 }
                 else if (type == "apppostimage")
                 {
                     BlogSettings.PostCover = asset.Url;
-                    _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.PostImage, asset.Url);
+                    this.db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.PostImage, asset.Url);
                 }
                 else
                 {
@@ -108,7 +107,7 @@ namespace Blogifier.Core.Controllers.Api
                         profile.Image = asset.Url;
                     }                    
                 }
-                _db.Complete();
+                this.db.Complete();
             }
             return asset;
         }
@@ -118,12 +117,12 @@ namespace Blogifier.Core.Controllers.Api
         [Route("postimage/{assetId:int}/{postId:int}")]
         public Asset UpdatePostImage(string type, int assetId, int postId)
         {
-            var asset = _db.Assets.Single(a => a.Id == assetId);
+            var asset = this.db.Assets.Single(a => a.Id == assetId);
             if(postId > 0)
             {
-                var post = _db.BlogPosts.Single(p => p.Id == postId);
+                var post = this.db.BlogPosts.Single(p => p.Id == postId);
                 post.Image = asset.Url;
-                _db.Complete();
+                this.db.Complete();
             }
             return asset;
         }
@@ -154,7 +153,7 @@ namespace Blogifier.Core.Controllers.Api
         [HttpDelete("{id:int}")]
         public IActionResult Delete(int id)
         {
-            var asset = _db.Assets.Single(a => a.Id == id);
+            var asset = this.db.Assets.Single(a => a.Id == id);
             if (asset == null)
                 return NotFound();
 
@@ -166,25 +165,23 @@ namespace Blogifier.Core.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                this.logger.LogError(ex.Message);
             }
 
-            _db.Assets.Remove(asset);
-            _db.Complete();
+            this.db.Assets.Remove(asset);
+            this.db.Complete();
 
             // reset profile image to default
             // if asset was removed
-            var profiles = _db.Profiles.Find(p => p.Image == asset.Url || p.Avatar == asset.Url || p.Logo == asset.Url).ToList();
-            if(profiles != null)
+            var profiles = this.db.Profiles.Find(p => p.Image == asset.Url || p.Avatar == asset.Url || p.Logo == asset.Url).ToList();
+            foreach (var item in profiles)
             {
-                foreach (var item in profiles)
-                {
-                    if (item.Image == asset.Url) item.Image = null;
-                    if (item.Avatar == asset.Url) item.Avatar = null;
-                    if (item.Logo == asset.Url) item.Logo = null;
-                    _db.Complete();
-                }
+                if (item.Image == asset.Url) item.Image = null;
+                if (item.Avatar == asset.Url) item.Avatar = null;
+                if (item.Logo == asset.Url) item.Logo = null;
+                this.db.Complete();
             }
+
             return new NoContentResult();
         }
 
@@ -203,7 +200,7 @@ namespace Blogifier.Core.Controllers.Api
             if (type == "profileImage")
                 profile.Image = null;
 
-            _db.Complete();
+            this.db.Complete();
             return new NoContentResult();
         }
 
@@ -211,13 +208,13 @@ namespace Blogifier.Core.Controllers.Api
         [HttpDelete("resetpostimage/{id:int}")]
         public IActionResult ResetPostImage(int id)
         {
-            var post = _db.BlogPosts.Single(p => p.Id == id);
+            var post = this.db.BlogPosts.Single(p => p.Id == id);
             post.Image = null;
-            _db.Complete();
+            this.db.Complete();
             return Json("admin/editor/" + id);
         }
 
-        async Task<Asset> SaveFile(IFormFile file)
+        private async Task<Asset> SaveFile(IFormFile file)
         {
             var profile = GetProfile();
             var storage = new BlogStorage(profile.Slug);
@@ -227,7 +224,7 @@ namespace Blogifier.Core.Controllers.Api
 
             // sometimes we just want to override uploaded file
             // only add DB record if asset does not exist yet
-            var existingAsset = _db.Assets.Find(a => a.Path == asset.Path).FirstOrDefault();
+            var existingAsset = this.db.Assets.Find(a => a.Path == asset.Path).FirstOrDefault();
             if (existingAsset == null)
             {
                 asset.ProfileId = profile.Id;
@@ -241,21 +238,21 @@ namespace Blogifier.Core.Controllers.Api
                 {
                     asset.AssetType = AssetType.Attachment;
                 }
-                _db.Assets.Add(asset);
+                this.db.Assets.Add(asset);
             }
             else
             {
                 existingAsset.LastUpdated = SystemClock.Now();
             }
-            _db.Complete();
+            this.db.Complete();
             return asset;
         }
 
-        Profile GetProfile()
+        private Profile GetProfile()
         {
             try
             {
-                return _db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
+                return this.db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
             }
             catch
             {
@@ -264,7 +261,7 @@ namespace Blogifier.Core.Controllers.Api
             return null;
         }
 
-        bool IsImageFile(string file)
+        private bool IsImageFile(string file)
         {
             if (file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                 file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||

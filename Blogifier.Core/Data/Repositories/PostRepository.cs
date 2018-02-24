@@ -13,22 +13,22 @@ namespace Blogifier.Core.Data.Repositories
 {
     public class PostRepository : Repository<BlogPost>, IPostRepository
     {
-        BlogifierDbContext _db;
+        BlogifierDbContext db;
 
         public PostRepository(BlogifierDbContext db) : base(db)
         {
-            _db = db;
+            this.db = db;
         }
 
         public IEnumerable<PostListItem> Find(Expression<Func<BlogPost, bool>> predicate, Pager pager)
         {
             var skip = pager.CurrentPage * pager.ItemsPerPage - pager.ItemsPerPage;
 
-            var drafts = _db.BlogPosts.Include(p => p.Profile)
+            var drafts = this.db.BlogPosts.Include(p => p.Profile)
                 .Where(p => p.Published == DateTime.MinValue).Where(predicate)
                 .OrderByDescending(p => p.LastUpdated).ToList();
 
-            var pubs = _db.BlogPosts.Include(p => p.Profile)
+            var pubs = this.db.BlogPosts.Include(p => p.Profile)
                 .Where(p => p.Published > DateTime.MinValue).Where(predicate)
                 .OrderByDescending(p => p.Published).ToList();
 
@@ -44,7 +44,7 @@ namespace Blogifier.Core.Data.Repositories
         {
             var skip = pager.CurrentPage * pager.ItemsPerPage - pager.ItemsPerPage;
 
-            var postsList = await _db.PostCategories
+            var postsList = await this.db.PostCategories
                 .Include(pc => pc.BlogPost)
                 .Include(pc => pc.Category)
                 .Include(pc => pc.BlogPost.Profile)
@@ -82,7 +82,7 @@ namespace Blogifier.Core.Data.Repositories
         {
             var skip = pager.CurrentPage * pager.ItemsPerPage - pager.ItemsPerPage;
 
-            var posts = _db.BlogPosts.Where(p => p.Profile.Slug == blog);
+            var posts = this.db.BlogPosts.Where(p => p.Profile.Slug == blog);
 
             if (status == "P")
                 posts = posts.Where(p => p.Published > DateTime.MinValue);
@@ -102,34 +102,34 @@ namespace Blogifier.Core.Data.Repositories
 
         public async Task UpdatePostCategories(int postId, IEnumerable<string> catIds)
         {
-            _db.PostCategories.RemoveRange(_db.PostCategories.Where(c => c.BlogPostId == postId));
-            _db.SaveChanges();
+            this.db.PostCategories.RemoveRange(this.db.PostCategories.Where(c => c.BlogPostId == postId));
+            this.db.SaveChanges();
 
             if (catIds != null && catIds.Count() > 0)
             {
                 foreach (var id in catIds)
                 {
-                    _db.PostCategories.Add(new PostCategory
+                    this.db.PostCategories.Add(new PostCategory
                     {
                         BlogPostId = postId,
                         CategoryId = int.Parse(id),
                         LastUpdated = DateTime.UtcNow
                     });
-                    _db.SaveChanges();
+                    this.db.SaveChanges();
                 }
             }
-            await _db.SaveChangesAsync();
+            await this.db.SaveChangesAsync();
         }
 
         public IEnumerable<BlogPost> AllIncluded(Expression<Func<BlogPost, bool>> predicate)
         {
-            return _db.BlogPosts.AsNoTracking().Where(predicate).OrderByDescending(p => p.LastUpdated)
+            return this.db.BlogPosts.AsNoTracking().Where(predicate).OrderByDescending(p => p.LastUpdated)
                 .Include(p => p.PostCategories).Include(p => p.Profile);
         }
 
         public async Task<BlogPost> SingleIncluded(Expression<Func<BlogPost, bool>> predicate)
         {
-            var post = await _db.BlogPosts.FirstOrDefaultAsync(predicate);
+            var post = await this.db.BlogPosts.FirstOrDefaultAsync(predicate);
 
             if (post == null)
                 return null;
@@ -137,10 +137,10 @@ namespace Blogifier.Core.Data.Repositories
             // to count post views
             post.PostViews++;
 
-            _db.BlogPosts.Update(post);
-            await _db.SaveChangesAsync();
+            this.db.BlogPosts.Update(post);
+            await this.db.SaveChangesAsync();
 
-            return await _db.BlogPosts.AsNoTracking()
+            return await this.db.BlogPosts.AsNoTracking()
                 .Include(p => p.PostCategories)
                 .Include(p => p.Profile)
                 .FirstOrDefaultAsync(predicate);
@@ -166,7 +166,7 @@ namespace Blogifier.Core.Data.Repositories
                 PostViews = p.PostViews,
                 Rating = p.Rating,
                 IsFeatured = p.IsFeatured,
-                PostCategories = (from pc in _db.PostCategories where pc.BlogPostId == p.Id select pc.Category.Slug).ToList()
+                PostCategories = (from pc in this.db.PostCategories where pc.BlogPostId == p.Id select pc.Category.Slug).ToList()
             }).Distinct().ToList();
         }
 

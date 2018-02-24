@@ -10,12 +10,12 @@ namespace Blogifier.Core.Middleware
 {
     public class AppSettingsLoader
     {
-        private readonly RequestDelegate _next;
-        private static bool _loaded;
+        private readonly RequestDelegate next;
+        private static bool loaded;
 
         public AppSettingsLoader(RequestDelegate next, IConfiguration config)
         {
-            if (!_loaded)
+            if (!loaded)
             {
                 var builder = new DbContextOptionsBuilder<BlogifierDbContext>();
                 ApplicationSettings.DatabaseOptions(builder);
@@ -64,17 +64,17 @@ namespace Blogifier.Core.Middleware
                         }
                     }
                 }
-                _loaded = true;
+                loaded = true;
             }
             
-            _next = next;
+            this.next = next;
         }
 
         public async Task Invoke(HttpContext httpContext)
         {
             // we only need this middleware run on app start
             // nothing to do in the invoke, pass it though
-            await _next(httpContext);
+            await this.next(httpContext);
         }
     }
 }

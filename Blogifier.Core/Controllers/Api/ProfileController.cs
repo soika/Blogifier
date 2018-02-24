@@ -11,11 +11,11 @@ namespace Blogifier.Core.Controllers.Api
     [Route("blogifier/api/[controller]")]
     public class ProfileController : Controller
     {
-        IUnitOfWork _db;
+        IUnitOfWork db;
 
         public ProfileController(IUnitOfWork db)
         {
-            _db = db;
+            this.db = db;
         }
 
         // PUT: api/profile/setcustomfield
@@ -24,14 +24,14 @@ namespace Blogifier.Core.Controllers.Api
         public async Task SetCustomField([FromBody]CustomFieldItem item)
         {
             var profile = GetProfile();
-            await _db.CustomFields.SetCustomField(CustomType.Profile, profile.Id, item.CustomKey, item.CustomValue);
+            await this.db.CustomFields.SetCustomField(CustomType.Profile, profile.Id, item.CustomKey, item.CustomValue);
         }
 
         Profile GetProfile()
         {
             try
             {
-                return _db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
+                return this.db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
             }
             catch
             {

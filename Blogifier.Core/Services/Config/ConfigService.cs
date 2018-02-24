@@ -9,16 +9,16 @@ namespace Blogifier.Core.Services
 
     public class ConfigService : IConfigService
     {
-        private readonly IConfiguration _config;
+        private readonly IConfiguration config;
 
         public ConfigService(IConfiguration config)
         {
-            _config = config;
+            this.config = config;
         }
 
         public string GetSetting(string key)
         {
-            return _config.GetSection("Blogifier").GetValue<string>(key);
+            return this.config.GetSection("Blogifier").GetValue<string>(key);
         }
     }
 }

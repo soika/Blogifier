@@ -18,27 +18,27 @@ namespace Blogifier.Core.Services.Routing
 
     public class BlogRouteConvention : IApplicationModelConvention
     {
-        private readonly AttributeRouteModel _centralPrefix;
-        private readonly TypeInfo _blogControllerTypeInfo;
+        private readonly AttributeRouteModel centralPrefix;
+        private readonly TypeInfo blogControllerTypeInfo;
 
         public BlogRouteConvention(IRouteTemplateProvider routeTemplateProvider)
         {
-            _centralPrefix = new AttributeRouteModel(routeTemplateProvider);
-            _blogControllerTypeInfo = typeof(Controllers.BlogController).GetTypeInfo();
+            this.centralPrefix = new AttributeRouteModel(routeTemplateProvider);
+            this.blogControllerTypeInfo = typeof(Controllers.BlogController).GetTypeInfo();
         }
 
         public void Apply(ApplicationModel application)
         {
             foreach (var controller in application.Controllers)
             {
-                if (controller.ControllerType == _blogControllerTypeInfo)
+                if (controller.ControllerType == this.blogControllerTypeInfo)
                 {
                     var matchedSelectors = controller.Selectors.Where(x => x.AttributeRouteModel != null).ToList();
                     if (matchedSelectors.Any())
                     {
                         foreach (var selectorModel in matchedSelectors)
                         {
-                            selectorModel.AttributeRouteModel = AttributeRouteModel.CombineAttributeRouteModel(_centralPrefix,
+                            selectorModel.AttributeRouteModel = AttributeRouteModel.CombineAttributeRouteModel(this.centralPrefix,
                                 selectorModel.AttributeRouteModel);
                         }
                     }
@@ -48,7 +48,7 @@ namespace Blogifier.Core.Services.Routing
                     {
                         foreach (var selectorModel in unmatchedSelectors)
                         {
-                            selectorModel.AttributeRouteModel = _centralPrefix;
+                            selectorModel.AttributeRouteModel = this.centralPrefix;
                         }
                     }
                 }

@@ -14,12 +14,12 @@ namespace Newsletter
     [Route("blogifier/widgets/[controller]")]
     public class NewsletterController : Controller
     {
-        IUnitOfWork _db;
-        static readonly string key = "NEWSLETTER";
+        IUnitOfWork db;
+        static readonly string Key = "NEWSLETTER";
 
         public NewsletterController(IUnitOfWork db)
         {
-            _db = db;
+            this.db = db;
         }
 
         [HttpPut("subscribe")]
@@ -32,12 +32,12 @@ namespace Newsletter
                 if (!emails.Contains(item.CustomValue))
                 {
                     emails.Add(item.CustomValue);
-                    await _db.CustomFields.SetCustomField(CustomType.Application, 0, item.CustomKey, string.Join(",", emails));
+                    await this.db.CustomFields.SetCustomField(CustomType.Application, 0, item.CustomKey, string.Join(",", emails));
                 }
             }
             else
             {
-                await _db.CustomFields.SetCustomField(CustomType.Application, 0, item.CustomKey, item.CustomValue);
+                await this.db.CustomFields.SetCustomField(CustomType.Application, 0, item.CustomKey, item.CustomValue);
             }
         }
 
@@ -46,7 +46,7 @@ namespace Newsletter
         [HttpGet("settings")]
         public IActionResult Settings(string search = "")
         {
-            var profile = _db.Profiles.Single(b => b.IdentityName == User.Identity.Name);
+            var profile = this.db.Profiles.Single(b => b.IdentityName == User.Identity.Name);
             var emails = Emails();
 
             if (!string.IsNullOrEmpty(search))
@@ -80,13 +80,13 @@ namespace Newsletter
             if (emails != null && emails.Contains(id))
             {
                 emails.Remove(id);
-                await _db.CustomFields.SetCustomField(CustomType.Application, 0, key, string.Join(",", emails));
+                await this.db.CustomFields.SetCustomField(CustomType.Application, 0, Key, string.Join(",", emails));
             }
         }
 
         List<string> Emails()
         {
-            var field = _db.CustomFields.GetValue(CustomType.Application, 0, key);
+            var field = this.db.CustomFields.GetValue(CustomType.Application, 0, Key);
             return string.IsNullOrEmpty(field) ? null : field.Split(',').ToList();
         }
     }

@@ -1,48 +1,51 @@
-﻿using Blogifier.Core.Common;
-using Blogifier.Core.Data.Domain;
-using Blogifier.Core.Data.Interfaces;
-using Blogifier.Core.Data.Models;
-using Blogifier.Core.Extensions;
-using Blogifier.Core.Middleware;
-using Blogifier.Core.Services.FileSystem;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Blogifier.Core.Controllers
+﻿namespace Blogifier.Core.Controllers
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using Common;
+    using Data.Domain;
+    using Data.Interfaces;
+    using Data.Models;
+    using Extensions;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Logging;
+    using Middleware;
+    using Services.FileSystem;
+
     [Authorize]
     [Route("admin/[controller]")]
-	public class SettingsController : Controller
-	{
-		IUnitOfWork _db;
-        ILogger _logger;
-        string _theme;
+    public class SettingsController : Controller
+    {
+        private readonly IUnitOfWork db;
+        private ILogger logger;
+        private readonly string theme;
 
-		public SettingsController(IUnitOfWork db, ILogger<SettingsController> logger)
-		{
-			_db = db;
-            _logger = logger;
-            _theme = $"~/{ApplicationSettings.BlogAdminFolder}/Settings/";
+        public SettingsController(IUnitOfWork db, ILogger<SettingsController> logger)
+        {
+            this.db = db;
+            this.logger = logger;
+            this.theme = $"~/{ApplicationSettings.BlogAdminFolder}/Settings/";
         }
 
         [Route("profile")]
         public IActionResult Profile()
         {
-            var model = new SettingsProfile();
-            model.Profile = GetProfile();
-            
-            if(model.Profile != null)
+            var model = new SettingsProfile {Profile = GetProfile()};
+
+            if (model.Profile != null)
             {
                 model.AuthorName = model.Profile.AuthorName;
                 model.AuthorEmail = model.Profile.AuthorEmail;
                 model.Avatar = model.Profile.Avatar;
-                model.EmailEnabled = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.SendGridApiKey).Length > 0;
-                model.CustomFields = _db.CustomFields.GetUserFields(model.Profile.Id).Result;
+                model.EmailEnabled = this.db.CustomFields.GetValue(CustomType.Application,
+                                         0,
+                                         Constants.SendGridApiKey).Length > 0;
+                model.CustomFields = this.db.CustomFields.GetUserFields(model.Profile.Id).Result;
             }
-            return View(_theme + "Profile.cshtml", model);
+
+            return View(this.theme + "Profile.cshtml",
+                model);
         }
 
         [HttpPost]
@@ -56,10 +59,11 @@ namespace Blogifier.Core.Controllers
                 {
                     profile = new Profile();
 
-                    if (_db.Profiles.All().ToList().Count == 0)
+                    if (this.db.Profiles.All().ToList().Count == 0)
                     {
                         profile.IsAdmin = true;
                     }
+
                     profile.AuthorName = model.AuthorName;
                     profile.AuthorEmail = model.AuthorEmail;
                     profile.Avatar = model.Avatar;
@@ -70,7 +74,7 @@ namespace Blogifier.Core.Controllers
                     profile.Description = BlogSettings.Description;
                     profile.BlogTheme = BlogSettings.Theme;
 
-                    _db.Profiles.Add(profile);
+                    this.db.Profiles.Add(profile);
                 }
                 else
                 {
@@ -78,27 +82,33 @@ namespace Blogifier.Core.Controllers
                     profile.AuthorEmail = model.AuthorEmail;
                     profile.Avatar = model.Avatar;
                 }
-                _db.Complete();
+
+                this.db.Complete();
 
                 model.Profile = GetProfile();
 
                 // save custom fields
-                if(profile.Id > 0 && model.CustomFields != null)
+                if (profile.Id > 0 && model.CustomFields != null)
                 {
-                    SaveCustomFields(model.CustomFields, profile.Id);
+                    SaveCustomFields(model.CustomFields,
+                        profile.Id);
                 }
-                model.CustomFields = _db.CustomFields.GetUserFields(model.Profile.Id).Result;
+
+                model.CustomFields = this.db.CustomFields.GetUserFields(model.Profile.Id).Result;
 
                 ViewBag.Message = "Profile updated";
             }
-            return View(_theme + "Profile.cshtml", model);
+
+            return View(this.theme + "Profile.cshtml",
+                model);
         }
 
         [VerifyProfile]
         [Route("about")]
         public IActionResult About()
         {
-            return View(_theme + "About.cshtml", new AdminBaseModel { Profile = GetProfile() });
+            return View(this.theme + "About.cshtml",
+                new AdminBaseModel {Profile = GetProfile()});
         }
 
         [MustBeAdmin]
@@ -106,7 +116,6 @@ namespace Blogifier.Core.Controllers
         public IActionResult General()
         {
             var profile = GetProfile();
-            var storage = new BlogStorage("");
 
             var model = new SettingsGeneral
             {
@@ -118,11 +127,18 @@ namespace Blogifier.Core.Controllers
                 Logo = BlogSettings.Logo,
                 Avatar = ApplicationSettings.ProfileAvatar,
                 Image = BlogSettings.Cover,
-                EmailKey = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.SendGridApiKey),
-                BlogHead = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.HeadCode),
-                BlogFooter = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.FooterCode)
+                EmailKey = this.db.CustomFields.GetValue(CustomType.Application,
+                    0,
+                    Constants.SendGridApiKey),
+                BlogHead = this.db.CustomFields.GetValue(CustomType.Application,
+                    0,
+                    Constants.HeadCode),
+                BlogFooter = this.db.CustomFields.GetValue(CustomType.Application,
+                    0,
+                    Constants.FooterCode)
             };
-            return View(_theme + "General.cshtml", model);
+            return View(this.theme + "General.cshtml",
+                model);
         }
 
         [HttpPost]
@@ -130,7 +146,6 @@ namespace Blogifier.Core.Controllers
         [Route("general")]
         public IActionResult General(SettingsGeneral model)
         {
-            var storage = new BlogStorage("");
             model.BlogThemes = BlogSettings.BlogThemes;
             model.Profile = GetProfile();
 
@@ -143,23 +158,52 @@ namespace Blogifier.Core.Controllers
                 BlogSettings.Cover = model.Image;
                 BlogSettings.Theme = model.BlogTheme;
 
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.Title, model.Title);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.Description, model.Description);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileLogo, model.Logo);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileAvatar, model.Avatar);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ProfileImage, model.Image);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.BlogTheme, model.BlogTheme);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.SendGridApiKey, model.EmailKey);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.HeadCode, model.BlogHead);
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.FooterCode, model.BlogFooter);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.Title,
+                    model.Title);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.Description,
+                    model.Description);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.ProfileLogo,
+                    model.Logo);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.ProfileAvatar,
+                    model.Avatar);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.ProfileImage,
+                    model.Image);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.BlogTheme,
+                    model.BlogTheme);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.SendGridApiKey,
+                    model.EmailKey);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.HeadCode,
+                    model.BlogHead);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.FooterCode,
+                    model.BlogFooter);
 
                 model.Profile.BlogTheme = model.BlogTheme;
 
-                _db.Complete();
+                this.db.Complete();
 
                 ViewBag.Message = "Updated";
             }
-            return View(_theme + "General.cshtml", model);
+
+            return View(this.theme + "General.cshtml",
+                model);
         }
 
         [MustBeAdmin]
@@ -172,10 +216,13 @@ namespace Blogifier.Core.Controllers
             {
                 Profile = profile,
                 PostImage = BlogSettings.Cover,
-                PostFooter = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.PostCode),
+                PostFooter = this.db.CustomFields.GetValue(CustomType.Application,
+                    0,
+                    Constants.PostCode),
                 ItemsPerPage = BlogSettings.ItemsPerPage
             };
-            return View(_theme + "Posts.cshtml", model);
+            return View(this.theme + "Posts.cshtml",
+                model);
         }
 
         [HttpPost]
@@ -187,19 +234,30 @@ namespace Blogifier.Core.Controllers
 
             if (ModelState.IsValid)
             {
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.ItemsPerPage, model.ItemsPerPage.ToString());
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.ItemsPerPage,
+                    model.ItemsPerPage.ToString());
                 BlogSettings.ItemsPerPage = model.ItemsPerPage;
 
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.PostImage, model.PostImage);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.PostImage,
+                    model.PostImage);
                 BlogSettings.PostCover = model.PostImage;
 
-                _db.CustomFields.SetCustomField(CustomType.Application, 0, Constants.PostCode, model.PostFooter);
+                this.db.CustomFields.SetCustomField(CustomType.Application,
+                    0,
+                    Constants.PostCode,
+                    model.PostFooter);
 
-                _db.Complete();
+                this.db.Complete();
 
                 ViewBag.Message = "Updated";
             }
-            return View(_theme + "Posts.cshtml", model);
+
+            return View(this.theme + "Posts.cshtml",
+                model);
         }
 
         [MustBeAdmin]
@@ -212,38 +270,48 @@ namespace Blogifier.Core.Controllers
             {
                 Profile = profile
             };
-            return View(_theme + "Advanced.cshtml", model);
+            return View(this.theme + "Advanced.cshtml",
+                model);
         }
 
-        Profile GetProfile()
+        private Profile GetProfile()
         {
-            return _db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
+            return this.db.Profiles.Single(p => p.IdentityName == User.Identity.Name);
         }
 
-        void SaveCustomFields(Dictionary<string, string> fields, int profileId)
+        private void SaveCustomFields(Dictionary<string, string> fields, int profileId)
         {
-            if(fields != null && fields.Count > 0)
+            if (fields != null && fields.Count > 0)
             {
                 foreach (var field in fields)
                 {
-                    _db.CustomFields.SetCustomField(CustomType.Profile, profileId, field.Key, field.Value);
+                    this.db.CustomFields.SetCustomField(CustomType.Profile,
+                        profileId,
+                        field.Key,
+                        field.Value);
                 }
             }
         }
 
-        string SlugFromTitle(string title)
+        private string SlugFromTitle(string title)
         {
             var slug = title.ToSlug();
-            if (_db.Profiles.Single(b => b.Slug == slug) != null)
+            if (this.db.Profiles.Single(b => b.Slug == slug) == null)
             {
-                for (int i = 2; i < 100; i++)
+                return slug;
+            }
+
+            {
+                for (var i = 2; i < 100; i++)
                 {
-                    if (_db.Profiles.Single(b => b.Slug == slug + i.ToString()) == null)
+                    var i1 = i;
+                    if (this.db.Profiles.Single(b => b.Slug == slug + i1.ToString()) == null)
                     {
-                        return slug + i.ToString();
+                        return slug + i;
                     }
                 }
             }
+
             return slug;
         }
     }

@@ -4,16 +4,16 @@ namespace Blogifier.Core.Data.Repositories
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly BlogifierDbContext _db;
+        private readonly BlogifierDbContext db;
 
         public UnitOfWork(BlogifierDbContext db)
         {
-            _db = db;
-            Assets = new AssetRepository(_db);
-            Profiles = new ProfileRepository(_db);
-            Categories = new CategoryRepository(_db);
-            BlogPosts = new PostRepository(_db);
-            CustomFields = new CustomRepository(_db);
+            this.db = db;
+            Assets = new AssetRepository(this.db);
+            Profiles = new ProfileRepository(this.db);
+            Categories = new CategoryRepository(this.db);
+            BlogPosts = new PostRepository(this.db);
+            CustomFields = new CustomRepository(this.db);
         }
 
         public IAssetRepository Assets { get; private set; }
@@ -24,12 +24,12 @@ namespace Blogifier.Core.Data.Repositories
 
         public int Complete()
         {
-            return _db.SaveChanges();
+            return this.db.SaveChanges();
         }
 
         public void Dispose()
         {
-            _db.Dispose();
+            this.db.Dispose();
         }
     }
 }

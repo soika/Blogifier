@@ -18,20 +18,20 @@ namespace Blogifier.Core.Services.Syndication.Rss
 {
     public class RssService : IRssService
     {
-        IUnitOfWork _db;
-        RssImportModel _model;
-        private readonly AppLogger _logger;
+        IUnitOfWork db;
+        RssImportModel model;
+        private readonly AppLogger logger;
 
         public RssService(IUnitOfWork db, ILogger<RssService> logger)
         {
-            _db = db;
-            _logger = new AppLogger(logger);
+            this.db = db;
+            this.logger = new AppLogger(logger);
         }
 
         public async Task<HttpResponseMessage> Import(RssImportModel model)
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            _model = model;
+            this.model = model;
 
             if(model == null || string.IsNullOrEmpty(model.FeedUrl))
             {
@@ -40,7 +40,7 @@ namespace Blogifier.Core.Services.Syndication.Rss
                 return response;
             }
 
-            var blog = _db.Profiles.Single(b => b.Id == model.ProfileId);
+            var blog = this.db.Profiles.Single(b => b.Id == model.ProfileId);
             if (blog == null)
             {
                 response.StatusCode = HttpStatusCode.NotFound;
@@ -53,7 +53,7 @@ namespace Blogifier.Core.Services.Syndication.Rss
                 var storage = new BlogStorage(blog.Slug);
                 var items = GetFeedItems(model.FeedUrl);
 
-                _logger.LogInformation(string.Format("Start importing {0} posts", items.Count));
+                this.logger.LogInformation(string.Format("Start importing {0} posts", items.Count));
 
                 foreach (var item in items)
                 {
@@ -80,9 +80,9 @@ namespace Blogifier.Core.Services.Syndication.Rss
                     {
                         await ImportAttachements(post, storage);
                     }
-                    _db.BlogPosts.Add(post);
-                    _db.Complete();
-                    _logger.LogInformation(string.Format("RSS item added : {0}", item.Title));
+                    this.db.BlogPosts.Add(post);
+                    this.db.Complete();
+                    this.logger.LogInformation(string.Format("RSS item added : {0}", item.Title));
 
                     await AddCategories(item, model.ProfileId);
                 }
@@ -91,7 +91,7 @@ namespace Blogifier.Core.Services.Syndication.Rss
             }
             catch(Exception ex)
             {
-                _logger.LogError(string.Format("Error importing RSS : {0}", ex.Message));
+                this.logger.LogError(string.Format("Error importing RSS : {0}", ex.Message));
 
                 response.StatusCode = HttpStatusCode.BadRequest;
                 response.ReasonPhrase = ex.Message;
@@ -113,11 +113,11 @@ namespace Blogifier.Core.Services.Syndication.Rss
 
             if (string.IsNullOrEmpty(author))
             {
-                pubs = _db.BlogPosts.Find(p => p.Published > DateTime.MinValue && p.Published < DateTime.UtcNow, new Pager(1));
+                pubs = this.db.BlogPosts.Find(p => p.Published > DateTime.MinValue && p.Published < DateTime.UtcNow, new Pager(1));
             }
             else
             {
-                var profile = _db.Profiles.Single(p => p.Slug == author);
+                var profile = this.db.Profiles.Single(p => p.Slug == author);
                 feed = new Feed()
                 {
                     Title = profile.Title,
@@ -126,12 +126,12 @@ namespace Blogifier.Core.Services.Syndication.Rss
                     Copyright = "(c) " + DateTime.Now.Year
                 };
 
-                pubs = _db.BlogPosts.Find(p => p.Published > DateTime.MinValue && p.Published < DateTime.UtcNow && p.Profile.Slug == author, new Pager(1));
+                pubs = this.db.BlogPosts.Find(p => p.Published > DateTime.MinValue && p.Published < DateTime.UtcNow && p.Profile.Slug == author, new Pager(1));
             }
 
             foreach (var post in pubs)
             {
-                var postDetails = _db.BlogPosts.Single(p => p.Slug == post.Slug);
+                var postDetails = this.db.BlogPosts.Single(p => p.Slug == post.Slug);
 
                 var item = new FeedItem()
                 {
@@ -143,7 +143,7 @@ namespace Blogifier.Core.Services.Syndication.Rss
                     Author = new Author() { Name = post.AuthorName, Email = post.AuthorEmail }
                 };
 
-                item.Categories = _db.Categories.PostCategories(post.BlogPostId).Select(c => c.Text).ToList();
+                item.Categories = this.db.Categories.PostCategories(post.BlogPostId).Select(c => c.Text).ToList();
                 item.Comments = new Uri(absoluteUri + "/blog/" + post.Slug);
                 feed.Items.Add(item);
             }
@@ -156,7 +156,7 @@ namespace Blogifier.Core.Services.Syndication.Rss
             var client = new HttpClient();
             var doc = new XDocument();
 
-            _logger.LogInformation("Importing RSS from feed: " + url);
+            this.logger.LogInformation("Importing RSS from feed: " + url);
 
             if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
@@ -260,11 +260,11 @@ namespace Blogifier.Core.Services.Syndication.Rss
                         Asset asset;
                         if (uri.Contains("data:image"))
                         {
-                            asset = await storage.UploadBase64Image(uri, _model.Root, path);
+                            asset = await storage.UploadBase64Image(uri, this.model.Root, path);
                         }
                         else
                         {
-                            asset = await storage.UploadFromWeb(new Uri(uri), _model.Root, path);
+                            asset = await storage.UploadFromWeb(new Uri(uri), this.model.Root, path);
                         }
 
                         asset.ProfileId = post.ProfileId;
@@ -275,12 +275,12 @@ namespace Blogifier.Core.Services.Syndication.Rss
 
                         post.Content = post.Content.ReplaceIgnoreCase(uri.ToString(), asset.Url);
 
-                        _db.Assets.Add(asset);
-                        _db.Complete();
+                        this.db.Assets.Add(asset);
+                        this.db.Complete();
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(string.Format("Error importing [{0}] : {1}", item, ex.Message));
+                        this.logger.LogError(string.Format("Error importing [{0}] : {1}", item, ex.Message));
                     }
                 }
             }
@@ -291,11 +291,11 @@ namespace Blogifier.Core.Services.Syndication.Rss
             var url = link;
             if (url.StartsWith("~"))
             {
-                url = url.Replace("~", _model.Domain);
+                url = url.Replace("~", this.model.Domain);
             }
             if (url.StartsWith("/"))
             {
-                url = string.Concat(_model.Domain, url);
+                url = string.Concat(this.model.Domain, url);
             }
             return url;
         }
@@ -308,7 +308,7 @@ namespace Blogifier.Core.Services.Syndication.Rss
 
                 foreach (var cat in item.Categories)
                 {
-                    var blogCategory = _db.Categories.Single(c => c.Title == cat && c.ProfileId == blogId);
+                    var blogCategory = this.db.Categories.Single(c => c.Title == cat && c.ProfileId == blogId);
                     if (blogCategory == null)
                     {
                         var newCat = new Category
@@ -317,15 +317,15 @@ namespace Blogifier.Core.Services.Syndication.Rss
                             Title = cat,
                             Slug = cat.ToSlug()
                         };
-                        _db.Categories.Add(newCat);
-                        _db.Complete();
+                        this.db.Categories.Add(newCat);
+                        this.db.Complete();
 
-                        blogCategory = _db.Categories.Single(c => c.Title == cat && c.ProfileId == blogId);
+                        blogCategory = this.db.Categories.Single(c => c.Title == cat && c.ProfileId == blogId);
                     }
                     catIds.Add(blogCategory.Id.ToString());
                 }
-                var blogPost = _db.BlogPosts.Single(p => p.Slug == item.Title.ToSlug());
-                await _db.BlogPosts.UpdatePostCategories(blogPost.Id, catIds);
+                var blogPost = this.db.BlogPosts.Single(p => p.Slug == item.Title.ToSlug());
+                await this.db.BlogPosts.UpdatePostCategories(blogPost.Id, catIds);
             }
         }
 

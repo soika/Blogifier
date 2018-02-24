@@ -103,15 +103,15 @@ namespace Blogifier.Core.Extensions
 
         public static string ToPrettySize(this long value, int decimalPlaces = 0)
         {
-            const long OneKb = 1024;
-            const long OneMb = OneKb * 1024;
-            const long OneGb = OneMb * 1024;
-            const long OneTb = OneGb * 1024;
+            const long oneKb = 1024;
+            const long oneMb = oneKb * 1024;
+            const long oneGb = oneMb * 1024;
+            const long oneTb = oneGb * 1024;
 
-            var asTb = Math.Round((double)value / OneTb, decimalPlaces);
-            var asGb = Math.Round((double)value / OneGb, decimalPlaces);
-            var asMb = Math.Round((double)value / OneMb, decimalPlaces);
-            var asKb = Math.Round((double)value / OneKb, decimalPlaces);
+            var asTb = Math.Round((double)value / oneTb, decimalPlaces);
+            var asGb = Math.Round((double)value / oneGb, decimalPlaces);
+            var asMb = Math.Round((double)value / oneMb, decimalPlaces);
+            var asKb = Math.Round((double)value / oneKb, decimalPlaces);
 
             string chosenValue = asTb > 1 ? string.Format("{0}Tb", asTb)
                 : asGb > 1 ? string.Format("{0}Gb", asGb)

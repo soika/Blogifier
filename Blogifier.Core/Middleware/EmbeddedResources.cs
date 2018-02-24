@@ -14,15 +14,15 @@ namespace Blogifier.Core.Middleware
 {
     public class EmbeddedResources
 	{
-		readonly RequestDelegate _next;
-        readonly ILogger _logger;
-        Dictionary<string, CachedResource> _resources;
+		readonly RequestDelegate next;
+        readonly ILogger logger;
+        Dictionary<string, CachedResource> resources;
 
 		public EmbeddedResources(RequestDelegate next, ILogger<EmbeddedResources> logger)
 		{
-			_next = next;
-            _logger = logger;
-            _resources = new Dictionary<string, CachedResource>();
+			this.next = next;
+            this.logger = logger;
+            this.resources = new Dictionary<string, CachedResource>();
 			var assembly = typeof(EmbeddedResources).GetTypeInfo().Assembly;
 
 			foreach (var name in assembly.GetManifestResourceNames())
@@ -31,7 +31,7 @@ namespace Blogifier.Core.Middleware
 				{
                     var path = name.ReplaceIgnoreCase("Blogifier.Core", "").ToLower();
                     var resource = GetResource(name, assembly);
-					_resources.Add(path, resource);
+					this.resources.Add(path, resource);
 				}
 			}
 		}
@@ -44,7 +44,7 @@ namespace Blogifier.Core.Middleware
             {
                 try
                 {
-                    var resource = _resources[path];
+                    var resource = this.resources[path];
                     Stream stream = new MemoryStream(resource.Content);
 
                     SetContextHeaders(context, resource.ContentType, stream.Length);
@@ -53,12 +53,12 @@ namespace Blogifier.Core.Middleware
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(string.Format("Error processing embedded resource ({0}) : {1}", path, ex.Message));
+                    this.logger.LogError(string.Format("Error processing embedded resource ({0}) : {1}", path, ex.Message));
                 }
             }
             else
             {
-                await _next.Invoke(context);
+                await this.next.Invoke(context);
             }
         }
 

@@ -12,17 +12,17 @@ namespace Blogifier.Core.Data.Repositories
 {
     public class ProfileRepository : Repository<Profile>, IProfileRepository
     {
-        BlogifierDbContext _db;
+        BlogifierDbContext db;
         public ProfileRepository(BlogifierDbContext db) : base(db)
         {
-            _db = db;
+            this.db = db;
         }
 
         public IEnumerable<ProfileListItem> ProfileList(Expression<Func<Profile, bool>> predicate, Pager pager)
         {
             var skip = pager.CurrentPage * pager.ItemsPerPage - pager.ItemsPerPage;
 
-            var all = _db.Profiles.Include(p => p.Assets).Include(p => p.BlogPosts).Where(predicate);
+            var all = this.db.Profiles.Include(p => p.Assets).Include(p => p.BlogPosts).Where(predicate);
 
             pager.Configure(all.Count());
 
@@ -40,12 +40,12 @@ namespace Blogifier.Core.Data.Repositories
                 IsAdmin = p.IsAdmin,
 
                 PostCount = p.BlogPosts.Count,
-                PostViews = _db.BlogPosts.Where(bp => bp.Profile.Id == p.Id).Sum(bp => bp.PostViews),
-                DbUsage = _db.BlogPosts.Where(bp => bp.Profile.Id == p.Id).Sum(bp => Convert.ToInt32(bp.Content.Length)),
+                PostViews = this.db.BlogPosts.Where(bp => bp.Profile.Id == p.Id).Sum(bp => bp.PostViews),
+                DbUsage = this.db.BlogPosts.Where(bp => bp.Profile.Id == p.Id).Sum(bp => Convert.ToInt32(bp.Content.Length)),
 
                 AssetCount = p.Assets.Count,
-                DownloadCount = _db.Assets.Where(a => a.ProfileId == p.Id).Sum(a => a.DownloadCount),
-                DiskUsage = _db.Assets.Where(a => a.ProfileId == p.Id).Sum(a => a.Length),
+                DownloadCount = this.db.Assets.Where(a => a.ProfileId == p.Id).Sum(a => a.DownloadCount),
+                DiskUsage = this.db.Assets.Where(a => a.ProfileId == p.Id).Sum(a => a.Length),
 
                 LastUpdated = p.LastUpdated
             });

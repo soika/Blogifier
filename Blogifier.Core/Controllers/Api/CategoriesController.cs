@@ -1,66 +1,71 @@
-﻿using Blogifier.Core.Common;
-using Blogifier.Core.Data.Domain;
-using Blogifier.Core.Data.Interfaces;
-using Blogifier.Core.Data.Models;
-using Blogifier.Core.Extensions;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Generic;
-
-namespace Blogifier.Core.Controllers.Api
+﻿namespace Blogifier.Core.Controllers.Api
 {
+    using System;
+    using System.Collections.Generic;
+    using Common;
+    using Data.Domain;
+    using Data.Interfaces;
+    using Data.Models;
+    using Extensions;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Caching.Memory;
+
     [Authorize]
     [Route("blogifier/api/[controller]")]
     public class CategoriesController : Controller
     {
-        IUnitOfWork _db;
-        IMemoryCache _cache;
+        private readonly IMemoryCache cache;
+        private readonly IUnitOfWork db;
 
         public CategoriesController(IUnitOfWork db, IMemoryCache memoryCache)
         {
-            _db = db;
-            _cache = memoryCache;
+            this.db = db;
+            this.cache = memoryCache;
         }
 
         [HttpGet("blogcategories")]
         public IEnumerable<string> GetBlogCategories()
         {
             var blogCats = new List<string>();
-            var cats = _db.Categories.Find(c => c.ProfileId == GetProfile().Id);
+            var cats = this.db.Categories.Find(c => c.ProfileId == GetProfile().Id);
             foreach (var cat in cats)
             {
                 blogCats.Add(cat.Title);
             }
+
             return blogCats;
         }
 
         [HttpGet]
         public IEnumerable<CategoryItem> Get(int page)
         {
-            return CategoryList.Items(_db, GetProfile().Id);
+            return CategoryList.Items(this.db,
+                GetProfile().Id);
         }
 
         [HttpGet("{slug}")]
         public IEnumerable<CategoryItem> GetBySlug(string slug)
         {
-            var post = _db.BlogPosts.Single(p => p.Slug == slug);
+            var post = this.db.BlogPosts.Single(p => p.Slug == slug);
             var postId = post == null ? 0 : post.Id;
 
-            return CategoryList.Items(_db, GetProfile().Id, postId);
+            return CategoryList.Items(this.db,
+                GetProfile().Id,
+                postId);
         }
 
         [HttpGet("{id:int}")]
         public CategoryItem GetById(int id)
         {
-            return GetItem(_db.Categories.Single(c => c.Id == id));
+            return GetItem(this.db.Categories.Single(c => c.Id == id));
         }
 
         [HttpPost("addcategory")]
-        public IActionResult AddCategory([FromBody]AdminCategoryModel model)
+        public IActionResult AddCategory([FromBody] AdminCategoryModel model)
         {
             var profile = GetProfile();
-            var existing = _db.Categories.Single(c => c.Title == model.Title && c.ProfileId == profile.Id);
+            var existing = this.db.Categories.Single(c => c.Title == model.Title && c.ProfileId == profile.Id);
             if (existing == null)
             {
                 var newCategory = new Category
@@ -71,19 +76,23 @@ namespace Blogifier.Core.Controllers.Api
                     Slug = model.Title.ToSlug(),
                     LastUpdated = SystemClock.Now()
                 };
-                _db.Categories.Add(newCategory);
-                _db.Complete();
-                existing = _db.Categories.Single(c => c.Title == model.Title && c.ProfileId == profile.Id);
+
+                this.db.Categories.Add(newCategory);
+                this.db.Complete();
+
+                existing = this.db.Categories.Single(c => c.Title == model.Title && c.ProfileId == profile.Id);
             }
-            var callback = new { Id = existing.Id, Title = existing.Title };
-            return new CreatedResult("blogifier/api/categories/" + existing.Id, callback);
+
+            var callback = new {existing.Id, existing.Title};
+            return new CreatedResult("blogifier/api/categories/" + existing.Id,
+                callback);
         }
 
         [HttpPut("addcategorytopost")]
-        public void AddCategoryToPost([FromBody]AdminCategoryModel model)
+        public void AddCategoryToPost([FromBody] AdminCategoryModel model)
         {
-            var existing = _db.Categories.Single(c => c.Title == model.Title);
-            if(existing == null)
+            var existing = this.db.Categories.Single(c => c.Title == model.Title);
+            if (existing == null)
             {
                 var newCategory = new Category
                 {
@@ -93,39 +102,46 @@ namespace Blogifier.Core.Controllers.Api
                     Slug = model.Title.ToSlug(),
                     LastUpdated = SystemClock.Now()
                 };
-                _db.Categories.Add(newCategory);
-                _db.Complete();
+                this.db.Categories.Add(newCategory);
+                this.db.Complete();
 
-                existing = _db.Categories.Single(c => c.Title == model.Title);
+                existing = this.db.Categories.Single(c => c.Title == model.Title);
             }
-            _db.Categories.AddCategoryToPost(int.Parse(model.PostId), existing.Id);
-            _db.Complete();
+
+            this.db.Categories.AddCategoryToPost(int.Parse(model.PostId),
+                existing.Id);
+            this.db.Complete();
         }
 
         [HttpPut("removecategoryfrompost")]
-        public void RemoveCategoryFromPost([FromBody]AdminCategoryModel model)
+        public void RemoveCategoryFromPost([FromBody] AdminCategoryModel model)
         {
-            _db.Categories.RemoveCategoryFromPost(int.Parse(model.PostId), int.Parse(model.CategoryId));
-            _db.Complete();
+            this.db.Categories.RemoveCategoryFromPost(int.Parse(model.PostId),
+                int.Parse(model.CategoryId));
+            this.db.Complete();
         }
 
         [HttpPut]
-        public IActionResult Put([FromBody]CategoryItem category)
+        public IActionResult Put([FromBody] CategoryItem category)
         {
             var blog = GetProfile();
             if (ModelState.IsValid)
             {
-                int id = string.IsNullOrEmpty(category.Id) ? 0 : int.Parse(category.Id);
+                var id = string.IsNullOrEmpty(category.Id) ? 0 : int.Parse(category.Id);
                 if (id > 0)
                 {
-                    var existing = _db.Categories.Single(c => c.Id == id);
+                    var existing = this.db.Categories.Single(c => c.Id == id);
                     if (existing == null)
+                    {
                         return NotFound();
+                    }
 
                     existing.Title = category.Title;
-                    existing.Description = string.IsNullOrEmpty(category.Description) ? category.Title : category.Description;
+                    existing.Description = string.IsNullOrEmpty(category.Description)
+                        ? category.Title
+                        : category.Description;
                     existing.LastUpdated = SystemClock.Now();
-                    _db.Complete();
+                    this.db.Complete();
                 }
                 else
                 {
@@ -133,30 +149,34 @@ namespace Blogifier.Core.Controllers.Api
                     {
                         ProfileId = blog.Id,
                         Title = category.Title,
-                        Description = string.IsNullOrEmpty(category.Description) ? category.Title : category.Description,
+                        Description =
+                            string.IsNullOrEmpty(category.Description) ? category.Title : category.Description,
                         Slug = category.Title.ToSlug(),
                         LastUpdated = SystemClock.Now()
                     };
-                    _db.Categories.Add(newCategory);
-                    _db.Complete();
+                    this.db.Categories.Add(newCategory);
+                    this.db.Complete();
                 }
             }
+
             return new NoContentResult();
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            var category = _db.Categories.Single(c => c.Id == id);
+            var category = this.db.Categories.Single(c => c.Id == id);
             if (category == null)
+            {
                 return NotFound();
+            }
 
-            _db.Categories.Remove(category);
-            _db.Complete();
+            this.db.Categories.Remove(category);
+            this.db.Complete();
             return new NoContentResult();
         }
 
-        CategoryItem GetItem(Category category)
+        private CategoryItem GetItem(Category category)
         {
             var vCount = 0;
             var pCount = 0;
@@ -165,10 +185,12 @@ namespace Blogifier.Core.Controllers.Api
                 pCount = category.PostCategories.Count;
                 foreach (var pc in category.PostCategories)
                 {
-                    vCount += _db.BlogPosts.Single(p => p.Id == pc.BlogPostId).PostViews;
+                    vCount += this.db.BlogPosts.Single(p => p.Id == pc.BlogPostId).PostViews;
                 }
-                _db.Complete();
+
+                this.db.Complete();
             }
+
             return new CategoryItem
             {
                 Id = category.Id.ToString(),
@@ -180,21 +202,21 @@ namespace Blogifier.Core.Controllers.Api
             };
         }
 
-        Profile GetProfile()
+        private Profile GetProfile()
         {
             var key = "_BLOGIFIER_CACHE_BLOG_KEY";
             Profile publisher;
-            if (_cache.TryGetValue(key, out publisher))
+            if (this.cache.TryGetValue(key,
+                out publisher))
             {
                 return publisher;
             }
-            else
-            {
-                publisher = _db.Profiles.Single(b => b.IdentityName == User.Identity.Name);
-                _cache.Set(key, publisher,
-                    new MemoryCacheEntryOptions().SetAbsoluteExpiration(System.TimeSpan.FromHours(2)));
-                return publisher;
-            }
+
+            publisher = this.db.Profiles.Single(b => b.IdentityName == User.Identity.Name);
+            this.cache.Set(key,
+                publisher,
+                new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(2)));
+            return publisher;
         }
     }
 }

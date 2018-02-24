@@ -18,13 +18,13 @@ namespace Blogifier.Core.Services.Packages
 
     public class PackageService : IPackageService
     {
-        private readonly ICompositeViewEngine _engine;
-        private readonly IUnitOfWork _db;
+        private readonly ICompositeViewEngine engine;
+        private readonly IUnitOfWork db;
 
         public PackageService(IUnitOfWork db, ICompositeViewEngine engine)
         {
-            _db = db;
-            _engine = engine;
+            this.db = db;
+            this.engine = engine;
         }
 
         public Task<List<PackageListItem>> Find(PackageType packageType)
@@ -56,7 +56,7 @@ namespace Blogifier.Core.Services.Packages
                 if (name != "Blogifier.Core")
                 {
                     var path = $"~/Views/Shared/Components/{name}/Settings.cshtml";
-                    var view = _engine.GetView("", path, false);
+                    var view = this.engine.GetView("", path, false);
 
                     var item = new PackageListItem
                     {
@@ -101,7 +101,7 @@ namespace Blogifier.Core.Services.Packages
 
         List<string> Disabled()
         {
-            var field = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.DisabledPackages);
+            var field = this.db.CustomFields.GetValue(CustomType.Application, 0, Constants.DisabledPackages);
             return string.IsNullOrEmpty(field) ? null : field.Split(',').ToList();
         }
     }

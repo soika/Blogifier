@@ -6,11 +6,11 @@ namespace Blogifier.Widgets
     [ViewComponent(Name = "Newsletter")]
     public class Newsletter : ViewComponent
     {
-        IUnitOfWork _db;
+        IUnitOfWork db;
 
         public Newsletter(IUnitOfWork db)
         {
-            _db = db;
+            this.db = db;
         }
 
         public IViewComponentResult Invoke()

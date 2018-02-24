@@ -17,15 +17,15 @@ namespace Blogifier.Core.Common
 
     public class ComponentHelper : IComponentHelper
     {
-        private readonly IViewComponentSelector _selector;
-        private readonly IUnitOfWork _db;
-        private readonly ILogger _logger;
+        private readonly IViewComponentSelector selector;
+        private readonly IUnitOfWork db;
+        private readonly ILogger logger;
 
         public ComponentHelper(IViewComponentSelector selector, IUnitOfWork db, ILogger<ComponentHelper> logger)
         {
-            _selector = selector;
-            _logger = logger;
-            _db = db;
+            this.selector = selector;
+            this.logger = logger;
+            this.db = db;
         }
 
         public async Task<IHtmlContent> InvokeAsync(IViewComponentHelper helper, string name, object arguments = null)
@@ -42,7 +42,7 @@ namespace Blogifier.Core.Common
             }
             catch (System.Exception ex)
             {
-                _logger.LogError($"Error loading widget: {ex.Message}");
+                this.logger.LogError($"Error loading widget: {ex.Message}");
                 return await Task.FromResult(new HtmlString(""));
             }
         }
@@ -61,13 +61,13 @@ namespace Blogifier.Core.Common
 
         List<string> Disabled()
         {
-            var field = _db.CustomFields.GetValue(CustomType.Application, 0, Constants.DisabledPackages);
+            var field = this.db.CustomFields.GetValue(CustomType.Application, 0, Constants.DisabledPackages);
             return field == null || string.IsNullOrEmpty(field) ? null : field.Split(',').ToList();
         }
 
         private bool Exists(string name)
         {
-            return _selector.SelectComponent(name) != null;
+            return this.selector.SelectComponent(name) != null;
         }
 
         private static IHtmlContent GetContent(string name)

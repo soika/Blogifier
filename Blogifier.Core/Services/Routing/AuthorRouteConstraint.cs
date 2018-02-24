@@ -13,9 +13,9 @@ namespace Blogifier.Core.Services.Routing
             if (values["slug"] != null)
             {
                 var slug = values["slug"].ToString();
-                var _context = new BlogifierDbContext(new DbContextOptions<BlogifierDbContext>());
+                var context = new BlogifierDbContext(new DbContextOptions<BlogifierDbContext>());
 
-                return _context.Profiles.Where(p => p.Slug == slug).FirstOrDefault() != null;
+                return context.Profiles.Where(p => p.Slug == slug).FirstOrDefault() != null;
             }
             return false;
         }

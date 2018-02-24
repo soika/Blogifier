@@ -12,19 +12,19 @@ namespace Blogifier.Core.Services.Data
 {
     public class DataService : IDataService
     {
-        IUnitOfWork _db;
-        ISearchService _search;
+        IUnitOfWork db;
+        ISearchService search;
 
         public DataService(IUnitOfWork db, ISearchService search)
         {
-            _db = db;
-            _search = search;
+            this.db = db;
+            this.search = search;
         }
 
         public BlogPostsModel GetPosts(int page, bool pub = false)
         {
             var pager = new Pager(page);
-            IEnumerable<PostListItem> posts = _db.BlogPosts.Find(p => p.Published > DateTime.MinValue, pager);
+            IEnumerable<PostListItem> posts = this.db.BlogPosts.Find(p => p.Published > DateTime.MinValue, pager);
 
             if (page < 1 || page > pager.LastPage)
                 return null;
@@ -42,8 +42,8 @@ namespace Blogifier.Core.Services.Data
         public BlogAuthorModel GetPostsByAuthor(string auth, int page, bool pub = false)
         {
             var pager = new Pager(page);
-            var profile = _db.Profiles.Single(p => p.Slug == auth);
-            var posts = _db.BlogPosts.Find(p => p.ProfileId == profile.Id && p.Published > DateTime.MinValue, pager);
+            var profile = this.db.Profiles.Single(p => p.Slug == auth);
+            var posts = this.db.BlogPosts.Find(p => p.ProfileId == profile.Id && p.Published > DateTime.MinValue, pager);
 
             if (page < 1 || page > pager.LastPage)
                 return null;
@@ -62,19 +62,19 @@ namespace Blogifier.Core.Services.Data
         public BlogCategoryModel GetPostsByCategory(string auth, string cat, int page, bool pub = false)
         {
             var pager = new Pager(page);
-            IEnumerable<PostListItem> posts = _db.BlogPosts.ByCategory(cat, pager).Result;
+            IEnumerable<PostListItem> posts = this.db.BlogPosts.ByCategory(cat, pager).Result;
 
             if (page < 1 || page > pager.LastPage)
                 return null;
 
             if (pub) posts = SantizePostListItems(posts);
-            var profile = _db.Profiles.Single(p => p.Slug == auth);
+            var profile = this.db.Profiles.Single(p => p.Slug == auth);
 
             return new BlogCategoryModel
             {
                 Profile = profile,
                 CustomFields = GetCustom(profile.Id),
-                Category = _db.Categories.Single(c => c.Slug == cat && c.ProfileId == profile.Id),
+                Category = this.db.Categories.Single(c => c.Slug == cat && c.ProfileId == profile.Id),
                 Posts = posts,
                 Pager = pager
             };
@@ -83,7 +83,7 @@ namespace Blogifier.Core.Services.Data
         public BlogCategoryModel GetAllPostsByCategory(string cat, int page, bool pub = false)
         {
             var pager = new Pager(page);
-            IEnumerable<PostListItem> posts = _db.BlogPosts.ByCategory(cat, pager).Result;
+            IEnumerable<PostListItem> posts = this.db.BlogPosts.ByCategory(cat, pager).Result;
 
             if (page < 1 || page > pager.LastPage)
                 return null;
@@ -94,7 +94,7 @@ namespace Blogifier.Core.Services.Data
             {
                 Profile = null,
                 CustomFields = GetCustom(),
-                Category = _db.Categories.Single(c => c.Slug == cat),
+                Category = this.db.Categories.Single(c => c.Slug == cat),
                 Posts = posts,
                 Pager = pager
             };
@@ -103,12 +103,12 @@ namespace Blogifier.Core.Services.Data
         public BlogPostDetailModel GetPostBySlug(string slug, bool pub = false)
         {
             var vm = new BlogPostDetailModel();
-            vm.BlogPost = _db.BlogPosts.SingleIncluded(p => p.Slug == slug).Result;
+            vm.BlogPost = this.db.BlogPosts.SingleIncluded(p => p.Slug == slug).Result;
 
             if (vm.BlogPost == null)
                 return null;
 
-            vm.Profile = vm.BlogPost.Profile != null ? vm.BlogPost.Profile : _db.Profiles.Single(p => p.Id == vm.BlogPost.ProfileId);
+            vm.Profile = vm.BlogPost.Profile != null ? vm.BlogPost.Profile : this.db.Profiles.Single(p => p.Id == vm.BlogPost.ProfileId);
 
             if (string.IsNullOrEmpty(vm.BlogPost.Image))
             {
@@ -122,7 +122,7 @@ namespace Blogifier.Core.Services.Data
             {
                 foreach (var pc in vm.BlogPost.PostCategories)
                 {
-                    var cat = _db.Categories.Single(c => c.Id == pc.CategoryId);
+                    var cat = this.db.Categories.Single(c => c.Id == pc.CategoryId);
                     vm.BlogCategories.Add(new SelectListItem { Value = cat.Slug, Text = cat.Title });
                 }
             }
@@ -146,7 +146,7 @@ namespace Blogifier.Core.Services.Data
         public BlogPostsModel SearchPosts(string term, int page, bool pub = false)
         {
             var pager = new Pager(page);
-            IEnumerable<PostListItem> posts = _search.Find(pager, term).Result;
+            IEnumerable<PostListItem> posts = this.search.Find(pager, term).Result;
 
             if (page < 1 || page > pager.LastPage)
                 return null;
@@ -163,16 +163,16 @@ namespace Blogifier.Core.Services.Data
 
         Dictionary<string, string> GetCustom(int profileId = 0)
         {
-            if (_db.CustomFields == null)
+            if (this.db.CustomFields == null)
                 return null;
 
-            var fields = _db.CustomFields.GetBlogFields().Result;
+            var fields = this.db.CustomFields.GetBlogFields().Result;
             if (fields == null)
                 fields = new Dictionary<string, string>();
 
             if (profileId > 0)
             {
-                var usrFields = _db.CustomFields.GetUserFields(profileId).Result;
+                var usrFields = this.db.CustomFields.GetUserFields(profileId).Result;
                 usrFields.ToList().ForEach(x => fields.Add(x.Key, x.Value));
             }
             return fields;

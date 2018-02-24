@@ -12,7 +12,7 @@ namespace Blogifier.Test.Repositories
 {
     public class CategoryRepositoryTests
     {
-        private readonly IEnumerable<Category> _categories = Enumerable.Range(1, 10)
+        private readonly IEnumerable<Category> categories = Enumerable.Range(1, 10)
             .Select(i => new Category
             {
                 Id = i,
@@ -20,14 +20,14 @@ namespace Blogifier.Test.Repositories
                 Slug = $"slug {i}"
             });
 
-        private readonly IEnumerable<BlogPost> _blogPosts = Enumerable.Range(1, 10)
+        private readonly IEnumerable<BlogPost> blogPosts = Enumerable.Range(1, 10)
             .Select(i => new BlogPost
             {
                 Id = i,
                 Title = $"blogpost {i}"
             });
 
-        private readonly IEnumerable<PostCategory> _postCategories = Enumerable.Range(1, 10)
+        private readonly IEnumerable<PostCategory> postCategories = Enumerable.Range(1, 10)
             .Select(i => new PostCategory
             {
                 Id = i,
@@ -348,9 +348,9 @@ namespace Blogifier.Test.Repositories
 
                 using (var context = new BlogifierDbContext(options))
                 {
-                    context.Categories.RemoveRange(_categories);
-                    context.BlogPosts.RemoveRange(_blogPosts);
-                    context.PostCategories.RemoveRange(_postCategories.Where(pc => pc.Id != 1));
+                    context.Categories.RemoveRange(this.categories);
+                    context.BlogPosts.RemoveRange(this.blogPosts);
+                    context.PostCategories.RemoveRange(this.postCategories.Where(pc => pc.Id != 1));
                     context.SaveChanges();
                 }
             }
@@ -363,9 +363,9 @@ namespace Blogifier.Test.Repositories
 
             var context = new BlogifierDbContext(options);
 
-            context.Categories.AddRange(_categories);
-            context.BlogPosts.AddRange(_blogPosts);
-            context.PostCategories.AddRange(_postCategories);
+            context.Categories.AddRange(this.categories);
+            context.BlogPosts.AddRange(this.blogPosts);
+            context.PostCategories.AddRange(this.postCategories);
             context.SaveChanges();
 
             return context;
@@ -378,9 +378,9 @@ namespace Blogifier.Test.Repositories
 
             using (var context = new BlogifierDbContext(options))
             {
-                context.Categories.RemoveRange(_categories);
-                context.BlogPosts.RemoveRange(_blogPosts);
-                context.PostCategories.RemoveRange(_postCategories);
+                context.Categories.RemoveRange(this.categories);
+                context.BlogPosts.RemoveRange(this.blogPosts);
+                context.PostCategories.RemoveRange(this.postCategories);
                 context.SaveChanges();
             }
         }

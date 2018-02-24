@@ -12,7 +12,7 @@ namespace Blogifier.Test.Repositories
 {
     public class AssetRepositoryTests
     {
-        private readonly IEnumerable<Asset> _assets = Enumerable.Range(1, 10)
+        private readonly IEnumerable<Asset> assets = Enumerable.Range(1, 10)
                 .Select(i => new Asset
                 {
                     Id = i,
@@ -118,7 +118,7 @@ namespace Blogifier.Test.Repositories
 
             var context = new BlogifierDbContext(options); 
 
-            context.Assets.AddRange(_assets);
+            context.Assets.AddRange(this.assets);
             context.SaveChanges();
 
             return context;
@@ -131,7 +131,7 @@ namespace Blogifier.Test.Repositories
 
             using (var context = new BlogifierDbContext(options))
             {
-                context.Assets.RemoveRange(_assets);
+                context.Assets.RemoveRange(this.assets);
                 context.SaveChanges();
             }
         }

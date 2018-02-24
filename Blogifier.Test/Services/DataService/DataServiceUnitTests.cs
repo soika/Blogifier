@@ -15,15 +15,15 @@ namespace Blogifier.Test.Services.DataService
 {
     public class DataServiceTests
     {
-        private readonly Mock<IUnitOfWork> _unitOfWork = new Mock<IUnitOfWork>();
+        private readonly Mock<IUnitOfWork> unitOfWork = new Mock<IUnitOfWork>();
 
-        private readonly Mock<IPostRepository> _postsRepository = new Mock<IPostRepository>();
+        private readonly Mock<IPostRepository> postsRepository = new Mock<IPostRepository>();
 
         private readonly Mock<IProfileRepository> profileRepository = new Mock<IProfileRepository>();
 
-        private readonly Mock<ISearchService> _searchService = new Mock<ISearchService>();
+        private readonly Mock<ISearchService> searchService = new Mock<ISearchService>();
 
-        private readonly Mock<ICategoryRepository> _categoryRepository = new Mock<ICategoryRepository>();
+        private readonly Mock<ICategoryRepository> categoryRepository = new Mock<ICategoryRepository>();
 
         [Fact]
         public void GetPosts_Page_SmallerThan_1_Returns_Null()
@@ -174,9 +174,9 @@ namespace Blogifier.Test.Services.DataService
         {
             // arrange
             SetupDependencies();
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult<BlogPost>(null));
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             var sut = GetSut();
 
@@ -214,14 +214,14 @@ namespace Blogifier.Test.Services.DataService
         {
             // arrange
             SetupDependencies();
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult(new BlogPost
                 {
                     Id = 1,
                     Title = "c#",
                     Profile = new Profile()
                 }));
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             var sut = GetSut();
 
@@ -239,14 +239,14 @@ namespace Blogifier.Test.Services.DataService
         {
             // arrange
             SetupDependencies();
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult(new BlogPost
                 {
                     Id = 1,
                     Title = "c#",
                     Profile = new Profile()
                 }));
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             var sut = GetSut();
 
@@ -262,7 +262,7 @@ namespace Blogifier.Test.Services.DataService
         {
             // arrange
             SetupDependencies();
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult(new BlogPost
                 {
                     Id = 1,
@@ -272,7 +272,7 @@ namespace Blogifier.Test.Services.DataService
                         Image = "img1"
                     }
                 }));
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             var sut = GetSut();
 
@@ -288,7 +288,7 @@ namespace Blogifier.Test.Services.DataService
         {
             // arrange
             SetupDependencies();
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult(new BlogPost
                 {
                     Id = 1,
@@ -302,7 +302,7 @@ namespace Blogifier.Test.Services.DataService
                     },
                     Profile = new Profile()
                 }));
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             var sut = GetSut();
 
@@ -319,7 +319,7 @@ namespace Blogifier.Test.Services.DataService
         {
             // arrange
             SetupDependencies();
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult(new BlogPost
                 {
                     Id = 1,
@@ -333,7 +333,7 @@ namespace Blogifier.Test.Services.DataService
                         Assets = new List<Asset>()
                     }
                 }));
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             var sut = GetSut();
 
@@ -351,26 +351,26 @@ namespace Blogifier.Test.Services.DataService
         private Core.Services.Data.DataService GetSut()
         {
             return new Core.Services.Data.DataService(
-                _unitOfWork.Object,
-                _searchService.Object);
+                this.unitOfWork.Object,
+                this.searchService.Object);
         }
 
         private void SetupDependencies()
         {
-            _postsRepository
+            this.postsRepository
                 .Setup(x => x.Find(It.IsAny<Expression<Func<BlogPost, bool>>>(), It.IsAny<Pager>()))
                 .Returns(new List<PostListItem>
                 {
                     new PostListItem { AuthorName = "Joe", Title = "dotnet core" , AuthorEmail = "test@test.com"}
                 });
-            _postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
+            this.postsRepository.Setup(x => x.SingleIncluded(It.IsAny<Expression<Func<BlogPost, bool>>>()))
                 .Returns(Task.FromResult(new BlogPost
                 {
                     Id = 1,
                     Profile = new Profile()
                 }));
 
-            _unitOfWork.Setup(x => x.BlogPosts).Returns(_postsRepository.Object);
+            this.unitOfWork.Setup(x => x.BlogPosts).Returns(this.postsRepository.Object);
 
             profileRepository
                 .Setup(x => x.Single(It.IsAny<Expression<Func<Profile, bool>>>()))
@@ -380,9 +380,9 @@ namespace Blogifier.Test.Services.DataService
                     AuthorName = "Joe",
                     AuthorEmail = "test@test.com"
                 });
-            _unitOfWork.Setup(x => x.Profiles).Returns(profileRepository.Object);
+            this.unitOfWork.Setup(x => x.Profiles).Returns(profileRepository.Object);
 
-            _categoryRepository
+            this.categoryRepository
                 .Setup(x => x.Single(It.IsAny<Expression<Func<Category, bool>>>()))
                 .Returns(new Category
                 {
@@ -390,9 +390,9 @@ namespace Blogifier.Test.Services.DataService
                     Slug = "slug1",
                     Title = "123"
                 });
-            _unitOfWork.Setup(x => x.Categories).Returns(_categoryRepository.Object);
+            this.unitOfWork.Setup(x => x.Categories).Returns(this.categoryRepository.Object);
 
-            _searchService
+            this.searchService
                 .Setup(x => x.Find(It.IsAny<Pager>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.FromResult(new List<PostListItem>
                 {

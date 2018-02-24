@@ -10,7 +10,7 @@ namespace Blogifier.Core.Services.Routing
     [HtmlTargetElement(Attributes = "is-active-route")]
     public class ActiveRouteTagHelper : TagHelper
     {
-        private IDictionary<string, string> _routeValues;
+        private IDictionary<string, string> routeValues;
 
         [HtmlAttributeName("asp-action")]
         public string Action { get; set; }
@@ -23,13 +23,13 @@ namespace Blogifier.Core.Services.Routing
         {
             get
             {
-                if (this._routeValues == null)
-                    this._routeValues = (IDictionary<string, string>)new Dictionary<string, string>((IEqualityComparer<string>)StringComparer.OrdinalIgnoreCase);
-                return this._routeValues;
+                if (this.routeValues == null)
+                    this.routeValues = (IDictionary<string, string>)new Dictionary<string, string>((IEqualityComparer<string>)StringComparer.OrdinalIgnoreCase);
+                return this.routeValues;
             }
             set
             {
-                this._routeValues = value;
+                this.routeValues = value;
             }
         }
 

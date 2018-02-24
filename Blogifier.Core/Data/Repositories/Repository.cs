@@ -9,46 +9,46 @@ namespace Blogifier.Core.Data.Repositories
 {
     public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
     {
-        protected readonly DbSet<TEntity> _entities;
+        protected readonly DbSet<TEntity> Entities;
 
         public Repository(DbContext context)
         {
-            _entities = context.Set<TEntity>();
+            this.Entities = context.Set<TEntity>();
         }
 
         public IEnumerable<TEntity> All()
         {
-            return _entities.ToList();
+            return this.Entities.ToList();
         }
 
         public IEnumerable<TEntity> Find(Expression<Func<TEntity, bool>> predicate)
         {
-            return _entities.Where(predicate);
+            return this.Entities.Where(predicate);
         }
 
         public TEntity Single(Expression<Func<TEntity, bool>> predicate)
         {
-            return _entities.SingleOrDefault(predicate);
+            return this.Entities.SingleOrDefault(predicate);
         }
 
         public void Add(TEntity entity)
         {         
-            _entities.Add(entity);
+            this.Entities.Add(entity);
         }
 
         public void AddRange(IEnumerable<TEntity> entities)
         {
-            _entities.AddRange(entities);
+            this.Entities.AddRange(entities);
         }
 
         public void Remove(TEntity entity)
         {
-            _entities.Remove(entity);
+            this.Entities.Remove(entity);
         }
 
         public void RemoveRange(IEnumerable<TEntity> entities)
         {
-            _entities.RemoveRange(entities);
+            this.Entities.RemoveRange(entities);
         }
     }
 }

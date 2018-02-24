@@ -13,11 +13,11 @@ namespace Blogifier.Core.Services.Search
 {
     public class SearchService : ISearchService
     {
-        IUnitOfWork _db;
+        IUnitOfWork db;
 
         public SearchService(IUnitOfWork db)
         {
-            _db = db;
+            this.db = db;
         }
 
         public async Task<List<PostListItem>> Find(Pager pager, string term, string blogSlug = "")
@@ -28,9 +28,9 @@ namespace Blogifier.Core.Services.Search
 
             IEnumerable<BlogPost> posts;
             if(string.IsNullOrEmpty(blogSlug))
-                posts = _db.BlogPosts.AllIncluded(p => p.Published > DateTime.MinValue).ToList();
+                posts = this.db.BlogPosts.AllIncluded(p => p.Published > DateTime.MinValue).ToList();
             else
-                posts = _db.BlogPosts.AllIncluded(p => p.Published > DateTime.MinValue && p.Profile.Slug == blogSlug).ToList();
+                posts = this.db.BlogPosts.AllIncluded(p => p.Published > DateTime.MinValue && p.Profile.Slug == blogSlug).ToList();
 
             foreach (var item in posts)
             {

@@ -1,48 +1,54 @@
-﻿using Blogifier.Core.Common;
-using Blogifier.Core.Data.Domain;
-using Blogifier.Core.Data.Interfaces;
-using Blogifier.Core.Data.Models;
-using Blogifier.Core.Extensions;
-using Blogifier.Core.Middleware;
-using Blogifier.Core.Services.Search;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Linq;
-
-namespace Blogifier.Core.Controllers
+﻿namespace Blogifier.Core.Controllers
 {
+    using System.Linq;
+    using Common;
+    using Data.Domain;
+    using Data.Interfaces;
+    using Data.Models;
+    using Extensions;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Logging;
+    using Middleware;
+    using Services.Search;
+
     [Authorize]
     [Route("admin")]
-	public class AdminController : Controller
-	{
-		private readonly string _theme;
-        IUnitOfWork _db;
+    public class AdminController : Controller
+    {
+        private readonly IUnitOfWork unitOfWork;
+        private readonly string theme;
 
-		public AdminController(IUnitOfWork db, ISearchService search, ILogger<AdminController> logger)
-		{
-			_db = db;
-			_theme = $"~/{ApplicationSettings.BlogAdminFolder}/";
-		}
+        public AdminController(
+            IUnitOfWork unitOfWork,
+            ISearchService search,
+            ILogger<AdminController> logger)
+        {
+            this.unitOfWork = unitOfWork;
+            this.theme = $"~/{ApplicationSettings.BlogAdminFolder}/";
+        }
 
         [VerifyProfile]
         [HttpGet]
         public IActionResult Index()
         {
-            return RedirectToAction("Index", "Content");
+            return RedirectToAction("Index",
+                "Content");
         }
 
         [VerifyProfile]
         [Route("files")]
         public IActionResult Files(string search = "")
         {
-            return View(_theme + "Files.cshtml", new AdminBaseModel { Profile = GetProfile() });
+            return View(this.theme + "Files.cshtml",
+                new AdminBaseModel {Profile = GetProfile()});
         }
 
         [Route("setup")]
         public IActionResult Setup()
         {
-            return View(_theme + "Setup.cshtml", new AdminSetupModel());
+            return View(this.theme + "Setup.cshtml",
+                new AdminSetupModel());
         }
 
         [HttpPost]
@@ -54,10 +60,11 @@ namespace Blogifier.Core.Controllers
             {
                 var profile = new Profile();
 
-                if (_db.Profiles.All().ToList().Count == 0)
+                if (this.unitOfWork.Profiles.All().ToList().Count == 0)
                 {
                     profile.IsAdmin = true;
                 }
+
                 profile.AuthorName = model.AuthorName;
                 profile.AuthorEmail = model.AuthorEmail;
                 profile.Title = model.Title;
@@ -70,32 +77,41 @@ namespace Blogifier.Core.Controllers
 
                 profile.LastUpdated = SystemClock.Now();
 
-                _db.Profiles.Add(profile);
-                _db.Complete();
+                this.unitOfWork.Profiles.Add(profile);
+                this.unitOfWork.Complete();
 
                 return RedirectToAction("Index");
             }
-            return View(_theme + "Setup.cshtml", model);
+
+            return View(this.theme + "Setup.cshtml",
+                model);
         }
 
         private Profile GetProfile()
         {
-            return _db.Profiles.Single(b => b.IdentityName == User.Identity.Name);
+            return this.unitOfWork.Profiles.Single(b => b.IdentityName == User.Identity.Name);
         }
 
-        string SlugFromTitle(string title)
+        private string SlugFromTitle(string title)
         {
             var slug = title.ToSlug();
-            if (_db.Profiles.Single(b => b.Slug == slug) != null)
+            if (this.unitOfWork.Profiles.Single(b => b.Slug == slug) == null)
             {
-                for (int i = 2; i < 100; i++)
+                return slug;
+            }
+
+            {
+                for (var i = 2; i < 100; i++)
                 {
-                    if (_db.Profiles.Single(b => b.Slug == slug + i.ToString()) == null)
+                    var i1 = i;
+
+                    if (this.unitOfWork.Profiles.Single(b => b.Slug == slug + i1.ToString()) == null)
                     {
-                        return slug + i.ToString();
+                        return slug + i;
                     }
                 }
             }
+
             return slug;
         }
     }

@@ -1,33 +1,33 @@
-﻿using Blogifier.Core.Common;
-using Blogifier.Core.Controllers;
-using Blogifier.Core.Data.Domain;
-using Blogifier.Core.Data.Interfaces;
-using Blogifier.Core.Extensions;
-using Blogifier.Core.Services.Email;
-using Blogifier.Models;
-using Blogifier.Models.AccountViewModels;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Blogifier.Controllers
+﻿namespace Blogifier.Web.Controllers
 {
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Core.Common;
+    using Core.Controllers;
+    using Core.Data.Domain;
+    using Core.Data.Interfaces;
+    using Core.Extensions;
+    using Core.Services.Email;
+    using Microsoft.AspNetCore.Authentication;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
+    using Models;
+    using Models.AccountViewModels;
+
     [Authorize]
     [Route("[controller]/[action]")]
     public class AccountController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IEmailService _emailSender;
-        private readonly IConfiguration _config;
-        private readonly ILogger _logger;
-        private readonly IUnitOfWork _db;
+        private readonly UserManager<ApplicationUser> userManager;
+        private readonly SignInManager<ApplicationUser> signInManager;
+        private readonly IEmailService emailSender;
+        private readonly IConfiguration config;
+        private readonly ILogger logger;
+        private readonly IUnitOfWork db;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
@@ -37,12 +37,12 @@ namespace Blogifier.Controllers
             ILogger<AccountController> logger,
             IUnitOfWork db)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _emailSender = emailSender;
-            _config = config;
-            _logger = logger;
-            _db = db;
+            this.userManager = userManager;
+            this.signInManager = signInManager;
+            this.emailSender = emailSender;
+            this.config = config;
+            this.logger = logger;
+            this.db = db;
         }
 
         [TempData]
@@ -57,12 +57,12 @@ namespace Blogifier.Controllers
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
-            if(_db.Profiles.All().Count() == 0)
+            if(this.db.Profiles.All().Count() == 0)
                 return RedirectToAction(nameof(AccountController.Register), "Account");
 
             ViewData["ReturnUrl"] = returnUrl;
             ViewData["ShowRegistration"] = IsFirstAdminAccount();
-            ViewData["ShowForgotPwd"] = _emailSender.Enabled;
+            ViewData["ShowForgotPwd"] = this.emailSender.Enabled;
             return View();
         }
 
@@ -76,15 +76,15 @@ namespace Blogifier.Controllers
             {
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                var result = await this.signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User logged in.");
+                    this.logger.LogInformation("User logged in.");
                     return RedirectToLocal(returnUrl);
                 }
                 if (result.IsLockedOut)
                 {
-                    _logger.LogWarning("User account locked out.");
+                    this.logger.LogWarning("User account locked out.");
                     return RedirectToAction(nameof(Lockout));
                 }
                 else
@@ -124,15 +124,15 @@ namespace Blogifier.Controllers
             if (ModelState.IsValid)
             {
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
+                var result = await this.userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation(string.Format("Created a new account for {0}", user.UserName));
+                    this.logger.LogInformation(string.Format("Created a new account for {0}", user.UserName));
                     
                     // create new profile
                     var profile = new Profile();
 
-                    if (_db.Profiles.All().ToList().Count == 0 || model.IsAdmin)
+                    if (this.db.Profiles.All().ToList().Count == 0 || model.IsAdmin)
                     {
                         profile.IsAdmin = true;
                     }
@@ -149,15 +149,15 @@ namespace Blogifier.Controllers
 
                     profile.LastUpdated = Core.Common.SystemClock.Now();
 
-                    _db.Profiles.Add(profile);
-                    _db.Complete();
+                    this.db.Profiles.Add(profile);
+                    this.db.Complete();
 
-                    _logger.LogInformation(string.Format("Created a new profile at /{0}", profile.Slug));
+                    this.logger.LogInformation(string.Format("Created a new profile at /{0}", profile.Slug));
 
                     if (model.SendEmailNotification)
                     {
                         var userUrl = string.Format("{0}://{1}/{2}", Request.Scheme, Request.Host, profile.Slug);
-                        await _emailSender.SendEmailWelcomeAsync(model.Email, model.AuthorName, userUrl);
+                        await this.emailSender.SendEmailWelcomeAsync(model.Email, model.AuthorName, userUrl);
                     }
                     return RedirectToLocal(returnUrl);
                 }
@@ -170,8 +170,8 @@ namespace Blogifier.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
-            _logger.LogInformation("User logged out.");
+            await this.signInManager.SignOutAsync();
+            this.logger.LogInformation("User logged out.");
             return RedirectToAction(nameof(BlogController.Index), "Blog");
         }
 
@@ -183,12 +183,12 @@ namespace Blogifier.Controllers
             {
                 return RedirectToAction(nameof(BlogController.Index), "Blog");
             }
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await this.userManager.FindByIdAsync(userId);
             if (user == null)
             {
                 throw new ApplicationException($"Unable to load user with ID '{userId}'.");
             }
-            var result = await _userManager.ConfirmEmailAsync(user, code);
+            var result = await this.userManager.ConfirmEmailAsync(user, code);
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
@@ -206,17 +206,17 @@ namespace Blogifier.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
+                var user = await this.userManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
                     // Don't reveal that the user does not exist
                     return RedirectToAction(nameof(ForgotPasswordConfirmation));
                 }
 
-                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var code = await this.userManager.GeneratePasswordResetTokenAsync(user);
                 var callbackUrl = ResetPasswordCallbackLink(Url, user.Id, code, Request.Scheme);
 
-                await _emailSender.Send(model.Email, "Reset Password",
+                await this.emailSender.Send(model.Email, "Reset Password",
                    $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
 
                 return RedirectToAction(nameof(ForgotPasswordConfirmation));
@@ -252,13 +252,13 @@ namespace Blogifier.Controllers
             {
                 return View(model);
             }
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            var user = await this.userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
                 // Don't reveal that the user does not exist
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
             }
-            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+            var result = await this.userManager.ResetPasswordAsync(user, model.Code, model.Password);
             if (result.Succeeded)
             {
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
@@ -299,11 +299,11 @@ namespace Blogifier.Controllers
         string SlugFromTitle(string title)
         {
             var slug = title.ToSlug();
-            if (_db.Profiles.Single(b => b.Slug == slug) != null)
+            if (this.db.Profiles.Single(b => b.Slug == slug) != null)
             {
                 for (int i = 2; i < 100; i++)
                 {
-                    if (_db.Profiles.Single(b => b.Slug == slug + i.ToString()) == null)
+                    if (this.db.Profiles.Single(b => b.Slug == slug + i.ToString()) == null)
                     {
                         return slug + i.ToString();
                     }
@@ -316,13 +316,13 @@ namespace Blogifier.Controllers
         {
             // only show registration link if no admin yet exists
             // otherwise new users registered by admin from users panel
-            return _db.Profiles.Find(p => p.IsAdmin).ToList().Count == 0;
+            return this.db.Profiles.Find(p => p.IsAdmin).ToList().Count == 0;
         }
 
         // SendGrid account must be added to configuration settings
         bool EmailServiceEnabled()
         {
-            var section = _config.GetSection("Blogifier");
+            var section = this.config.GetSection("Blogifier");
             if (section == null)
                 return false;
 

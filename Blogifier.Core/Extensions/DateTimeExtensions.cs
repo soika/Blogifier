@@ -4,37 +4,37 @@ namespace Blogifier.Core.Extensions
 {
     public static class DateTimeExtensions
     {
-        public static string ToFriendlyDateTimeString(this DateTime Date)
+        public static string ToFriendlyDateTimeString(this DateTime date)
         {
-            return FriendlyDate(Date) + " @ " + Date.ToString("t").ToLower();
+            return FriendlyDate(date) + " @ " + date.ToString("t").ToLower();
         }
 
-        public static string ToFriendlyDateString(this DateTime Date)
+        public static string ToFriendlyDateString(this DateTime date)
         {
-            return FriendlyDate(Date);
+            return FriendlyDate(date);
         }
 
         static string FriendlyDate(DateTime date)
         {
-            string FormattedDate = "";
+            string formattedDate = "";
             if (date.Date == DateTime.Today)
             {
-                FormattedDate = "Today";
+                formattedDate = "Today";
             }
             else if (date.Date == DateTime.Today.AddDays(-1))
             {
-                FormattedDate = "Yesterday";
+                formattedDate = "Yesterday";
             }
             else if (date.Date > DateTime.Today.AddDays(-6))
             {
                 // *** Show the Day of the week
-                FormattedDate = date.ToString("dddd").ToString();
+                formattedDate = date.ToString("dddd").ToString();
             }
             else
             {
-                FormattedDate = date.ToString("MMMM dd, yyyy");
+                formattedDate = date.ToString("MMMM dd, yyyy");
             }
-            return FormattedDate;
+            return formattedDate;
         }
     }
 }
